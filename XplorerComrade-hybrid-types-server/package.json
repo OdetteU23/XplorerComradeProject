@@ -1,7 +1,7 @@
 {
-  "name": "@xplorercomrade/types",
+  "name": "@xplorercomrade/types-server",
   "version": "1.0.0",
-  "description": "Shared TypeScript types for XplorerComrade frontend and backend",
+  "description": "Shared TypeScript types for XplorerComrade app's frontend-server and backend-server development",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "scripts": {
@@ -13,9 +13,9 @@
     "typescript",
     "types",
     "shared",
-    "xplorercomrade"
+    "xplorercomrade app"
   ],
-  "author": "Your Name",
+  "author": "Odette U",
   "license": "MIT",
   "devDependencies": {
     "typescript": "^5.9.3"
@@ -26,6 +26,6 @@
   ],
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/yourusername/xplorercomrade-types.git"
+    "url": "git+https://github.com/OdetteU23/XplorerComradeProject.git"
   }
 }
