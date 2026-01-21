@@ -11,7 +11,7 @@ npm install github:OdetteU23/xplorercomrade-types
 
 ### From Local (Development)
 ```bash
-# In your frontend or backend project
+# In  frontend or backend project
 npm install file:../XplorerComrade-hybrid-types
 ```
 
