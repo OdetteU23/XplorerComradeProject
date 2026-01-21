@@ -78,3 +78,5 @@ static/uploads/
 # Database architecture diagrams/pngs
 *database_arch_v1.png
 *database_arch_v2.png
+*frontend-architecture.md
+*importantInfo.md
