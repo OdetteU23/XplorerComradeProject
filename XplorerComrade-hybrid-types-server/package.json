@@ -1,0 +1,31 @@
+{
+  "name": "@xplorercomrade/types",
+  "version": "1.0.0",
+  "description": "Shared TypeScript types for XplorerComrade frontend and backend",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "tsc",
+    "watch": "tsc --watch",
+    "clean": "if (Test-Path dist) { Remove-Item -Recurse -Force dist }"
+  },
+  "keywords": [
+    "typescript",
+    "types",
+    "shared",
+    "xplorercomrade"
+  ],
+  "author": "Your Name",
+  "license": "MIT",
+  "devDependencies": {
+    "typescript": "^5.9.3"
+  },
+  "files": [
+    "dist",
+    "src"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/yourusername/xplorercomrade-types.git"
+  }
+}

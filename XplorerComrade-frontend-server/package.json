@@ -1,0 +1,8 @@
+{
+  "name": "xplorercomrade-frontend",
+  "dependencies": {
+    "@xplorercomrade/types": "file:../XplorerComrade-hybrid-types",
+    "react": "^18.2.0",
+    "typescript": "^5.3.0"
+  }
+}

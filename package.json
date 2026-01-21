@@ -1,0 +1,34 @@
+{
+  "name": "xplorercomrade-monorepo",
+  "version": "1.0.0",
+  "description": "XplorerComrade - Travel Buddy Application Monorepo",
+  "private": true,
+  "workspaces": [
+    "XplorerComrade-backend",
+    "XplorerComrade-frontend",
+    "XplorerComrade-hybrid-types"
+  ],
+  "scripts": {
+    "install:all": "npm install",
+    "build:types": "npm run build --workspace=XplorerComrade-hybrid-types",
+    "build:backend": "npm run build --workspace=XplorerComrade-backend",
+    "build:frontend": "npm run build --workspace=XplorerComrade-frontend",
+    "build:all": "npm run build:types && npm run build:backend && npm run build:frontend",
+    "dev:backend": "npm run dev --workspace=XplorerComrade-backend",
+    "dev:frontend": "npm run dev --workspace=XplorerComrade-frontend",
+    "test:backend": "npm run test --workspace=XplorerComrade-backend",
+    "test:frontend": "npm run test --workspace=XplorerComrade-frontend"
+  },
+  "keywords": [
+    "travel",
+    "social-media",
+    "buddy",
+    "monorepo"
+  ],
+  "author": "Your Name",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/yourusername/XplorerComradeProject.git"
+  }
+}
