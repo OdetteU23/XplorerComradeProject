@@ -1,4 +1,4 @@
-import HomeView from './views/HomeView';
+import { HomeView } from './views/HomeView';
 import './App.css';
 //import UserDB from '@xplorercomrade/types-server';
 
