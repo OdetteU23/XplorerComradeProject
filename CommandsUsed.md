@@ -1,4 +1,7 @@
 ### To install the shared types:
+
+# ==>    npm install file:../XplorerComrade-hybrid-types-server
+
 # In the root folder to build the types: 
     npm run build
     The results:
@@ -24,6 +27,6 @@ npm install
 
 ## Summary of commands:
 Types package built -->     compiled to dist/ folder
-Backend linked      -->     can import from @xplorercomrade/types
-Frontend linked     -->     can import from @xplorercomrade/types
+Backend linked      -->     can import from @xplorercomrade/types-server
+Frontend linked     -->     can import from @xplorercomrade/types-server
 Monorepo configured -->     npm workspaces manage all three projects

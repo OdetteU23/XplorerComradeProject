@@ -30,5 +30,8 @@
   "repository": {
     "type": "git",
     "url": "git+https://github.com/OdetteU23/XplorerComradeProject.git"
+  },
+  "dependencies": {
+    "react-router-dom": "^7.13.0"
   }
 }
