@@ -21,6 +21,10 @@ type registeringInfo = Pick<userDB, 'käyttäjäTunnus' | 'etunimi' |
 
 type loginInfo = Pick<userDB, 'käyttäjäTunnus' | 'salasana'>;
 
+type logoutInfo = {
+    käyttäjäTunnus: () => void;
+};
+
 type julkaisu = {
     id: number;
     userId : userProfile['id'];
@@ -111,7 +115,7 @@ type julkaisuWithRelations = julkaisu & {
 
 
 export type { 
-    userProfile, userDB, julkaisu, seuranta, matkaAikeet, kommentti, 
+    userProfile, logoutInfo, userDB, julkaisu, seuranta, matkaAikeet, kommentti, 
     tykkäykset, registeringInfo, loginInfo, julkaisuWithRelations, 
     notifications, media_images, chatMessages, friendRequest, tripParticipants
 };

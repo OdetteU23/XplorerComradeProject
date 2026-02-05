@@ -1,27 +1,23 @@
+import { LoginComp, RegisterComp } from '../components/Login&RegisterForms';
+
 const RegisterView = () => {
   return (
-    <>
-      <h2>Register View</h2>
-      <p>Please register to create a new account.
-        (Content coming here:
-        {/* --> New user registration (registeringInfo) */}
-        )
-      </p>
-    </>
+    <div className="register-view">
+      <div className="auth-container">
+        <RegisterComp />
+      </div>
+    </div>
   );
 };
 
 const LoginView = () => {
   return (
-    <>
-      <h2>Login View</h2>
-      <p>Please log in to access your account.
-        (Content coming here:
-        {/*User authentication (loginInfo)*/}
-        )
-      </p>
-    </>
+    <div className="login-view">
+      <div className="auth-container">
+        <LoginComp />
+      </div>
+    </div>
   );
-} ;
+};
 
-export {RegisterView, LoginView };
+export { RegisterView, LoginView };
