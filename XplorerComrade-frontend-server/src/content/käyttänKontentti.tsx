@@ -1,6 +1,6 @@
-import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import { createContext, useContext, useState, useEffect } from 'react';
 import type { loginInfo, registeringInfo, userProfile } from '@xplorercomrade/types-server';
-import type { UserContextType } from '../../utilHelpers/types/localTypes';
+import type { UserContextType, PääKäyttäjäProviderProps } from '../../utilHelpers/types/localTypes';
 import { api } from '../../utilHelpers/FetchingData';
 
 const KäyttäjänKontentti = createContext<UserContextType | null>(null);
@@ -13,9 +13,7 @@ export const useKäyttäjä = () => {
   return context;
 };
 
-interface PääKäyttäjäProviderProps {
-  children: ReactNode;
-}
+
 
 export const PääKäyttäjäProvider = ({ children }: PääKäyttäjäProviderProps) => {
   const [user, setUser] = useState<userProfile | null>(null);

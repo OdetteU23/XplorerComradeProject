@@ -1,12 +1,6 @@
-import type { 
-  loginInfo, 
-  userProfile, 
-  friendRequest, 
-  matkaAikeet, 
-  tripParticipants, 
-  notifications,
-  chatMessages 
-} from '@xplorercomrade/types-server';
+import type { ReactNode } from 'react';
+import type { loginInfo, userProfile, friendRequest,  matkaAikeet, tripParticipants, 
+  chatMessages } from '@xplorercomrade/types-server';
 
 // Authentication types
 export type authens = {
@@ -73,3 +67,7 @@ export interface FilterOptions {
   dateRange?: { start: Date; end: Date };
   activities?: string[];
 }
+interface PääKäyttäjäProviderProps {
+  children: ReactNode;
+}
+export type {PääKäyttäjäProviderProps}
