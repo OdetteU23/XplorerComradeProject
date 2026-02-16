@@ -2,8 +2,8 @@
   "name": "@xplorercomrade/types-server",
   "version": "1.0.0",
   "description": "Shared TypeScript types for XplorerComrade app's frontend-server and backend-server development",
-  "main": "dist/index.js",
-  "types": "dist/index.d.ts",
+  "main": "dist/Index.js",
+  "types": "dist/Index.d.ts",
   "scripts": {
     "build": "tsc",
     "watch": "tsc --watch",
