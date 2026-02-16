@@ -1,0 +1,31 @@
+{
+  "name": "@xplorercomrade/types-server",
+  "version": "1.0.0",
+  "description": "Shared TypeScript types for XplorerComrade app's frontend-server and backend-server development",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "tsc",
+    "watch": "tsc --watch",
+    "clean": "if (Test-Path dist) { Remove-Item -Recurse -Force dist }"
+  },
+  "keywords": [
+    "typescript",
+    "types",
+    "shared",
+    "xplorercomrade app"
+  ],
+  "author": "Odette U",
+  "license": "MIT",
+  "devDependencies": {
+    "typescript": "^5.9.3"
+  },
+  "files": [
+    "dist",
+    "src"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/OdetteU23/XplorerComradeProject.git"
+  }
+}

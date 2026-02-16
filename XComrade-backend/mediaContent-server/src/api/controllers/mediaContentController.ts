@@ -1,0 +1,530 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
+import { Request, Response } from 'express';
+import type {
+  julkaisu,
+  kommentti,
+  tykkäykset,
+  matkaAikeet,
+  notifications,
+  chatMessages,
+  friendRequest,
+  tripParticipants,
+  userProfile
+} from '@xplorercomrade/types-server';
+import mediaContentModel from '../models/mediaContentModel';
+
+// Extend Express Request to include authenticated user
+interface AuthenticatedRequest extends Request {
+  user?: Pick<userProfile, 'id' | 'käyttäjäTunnus' | 'user_level_id'>;
+}
+
+//  POSTS (Julkaisut)
+
+const getFeed = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const page = parseInt(req.query.page as string) || 1;
+    const limit = parseInt(req.query.limit as string) || 20;
+    const offset = (page - 1) * limit;
+
+    const posts: julkaisu[] = mediaContentModel.getPosts(limit, offset);
+    res.json(posts);
+  } catch (error) {
+    console.error('Error fetching feed:', error);
+    res.status(500).json({ message: 'Server error while fetching feed' });
+  }
+};
+
+const getPost = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const postId = parseInt(req.params.id);
+    const post: julkaisu | undefined = mediaContentModel.getPostById(postId);
+
+    if (!post) {
+      res.status(404).json({ message: 'Post not found' });
+      return;
+    }
+
+    res.json(post);
+  } catch (error) {
+    console.error('Error fetching post:', error);
+    res.status(500).json({ message: 'Server error while fetching post' });
+  }
+};
+
+const getUserPosts = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const userId = parseInt(req.params.userId);
+    const posts: julkaisu[] = mediaContentModel.getUserPosts(userId);
+    res.json(posts);
+  } catch (error) {
+    console.error('Error fetching user posts:', error);
+    res.status(500).json({ message: 'Server error while fetching user posts' });
+  }
+};
+
+const createPost = async (req: AuthenticatedRequest, res: Response): Promise<void> => {
+  try {
+    const { kuvaus, kohde, list_aktiviteetti } = req.body as Pick<julkaisu, 'kuvaus' | 'kohde' | 'list_aktiviteetti'>;
+    const userId: number = req.user!.id;
+
+    if (!kuvaus || !kohde) {
+      res.status(400).json({ message: 'Description and destination are required' });
+      return;
+    }
+
+    const result = mediaContentModel.createNewPost(
+      kuvaus,
+      kohde,
+      userId,
+      list_aktiviteetti ? JSON.stringify(list_aktiviteetti) : undefined
+    );
+
+    const newPost: julkaisu | undefined = mediaContentModel.getPostById(result.lastInsertRowid as number);
+    res.status(201).json(newPost);
+  } catch (error) {
+    console.error('Error creating post:', error);
+    res.status(500).json({ message: 'Server error while creating post' });
+  }
+};
+
+const updatePost = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const postId = parseInt(req.params.id);
+    const { kuvaus, kohde, list_aktiviteetti } = req.body as Partial<Pick<julkaisu, 'kuvaus' | 'kohde' | 'list_aktiviteetti'>>;
+
+    mediaContentModel.updatePost(
+      postId,
+      kuvaus,
+      kohde,
+      list_aktiviteetti ? JSON.stringify(list_aktiviteetti) : undefined
+    );
+
+    const updatedPost: julkaisu | undefined = mediaContentModel.getPostById(postId);
+    res.json(updatedPost);
+  } catch (error) {
+    console.error('Error updating post:', error);
+    res.status(500).json({ message: 'Server error while updating post' });
+  }
+};
+
+const deletePost = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const postId = parseInt(req.params.id);
+    mediaContentModel.deletePost(postId);
+    res.json({ message: 'Post deleted successfully' });
+  } catch (error) {
+    console.error('Error deleting post:', error);
+    res.status(500).json({ message: 'Server error while deleting post' });
+  }
+};
+
+const searchPosts = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const query = req.query.q as string;
+    const posts: julkaisu[] = mediaContentModel.searchPosts(query);
+
+    res.json(posts);
+  } catch (error) {
+    console.error('Error searching posts:', error);
+    res.status(500).json({ message: 'Server error while searching posts' });
+  }
+};
+
+const getTrendingPosts = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const limit = parseInt(req.query.limit as string) || 10;
+    const daysBack = parseInt(req.query.days as string) || 7;
+    
+    const posts: julkaisu[] = mediaContentModel.getTrendingPosts(limit, daysBack);
+    res.json(posts);
+  } catch (error) {
+    console.error('Error fetching trending posts:', error);
+    res.status(500).json({ message: 'Server error while fetching trending posts' });
+  }
+};
+
+// Kommentit
+
+const getComments = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const postId = parseInt(req.params.postId);
+    const comments: kommentti[] = mediaContentModel.getCommentsForPost(postId);
+    res.json(comments);
+  } catch (error) {
+    console.error('Error fetching comments:', error);
+    res.status(500).json({ message: 'Server error while fetching comments' });
+  }
+};
+
+const addComment = async (req: AuthenticatedRequest, res: Response): Promise<void> => {
+  try {
+    const postId = parseInt(req.params.postId);
+    const { teksti_kenttä } = req.body as Pick<kommentti, 'teksti_kenttä'>;
+    const userId: number = req.user!.id;
+
+    if (!teksti_kenttä) {
+      res.status(400).json({ message: 'Comment text is required' });
+      return;
+    }
+
+    const result = mediaContentModel.addComment(teksti_kenttä, postId, userId);
+    res.status(201).json({ id: result.lastInsertRowid, teksti_kenttä, julkaisuId: postId, userId });
+  } catch (error) {
+    console.error('Error adding comment:', error);
+    res.status(500).json({ message: 'Server error while adding comment' });
+  }
+};
+
+const deleteComment = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const commentId = parseInt(req.params.id);
+    mediaContentModel.deleteComment(commentId);
+    res.json({ message: 'Comment deleted successfully' });
+  } catch (error) {
+    console.error('Error deleting comment:', error);
+    res.status(500).json({ message: 'Server error while deleting comment' });
+  }
+};
+
+// Tykkäykset
+
+const likePost = async (req: AuthenticatedRequest, res: Response): Promise<void> => {
+  try {
+    const postId = parseInt(req.params.postId);
+    const userId: number = req.user!.id;
+
+    const result = mediaContentModel.addLike(postId, userId);
+    res.status(201).json({ id: result.lastInsertRowid, julkaisuId: postId, userId });
+  } catch (error) {
+    console.error('Error liking post:', error);
+    res.status(500).json({ message: 'Server error while liking post' });
+  }
+};
+
+const unlikePost = async (req: AuthenticatedRequest, res: Response): Promise<void> => {
+  try {
+    const postId = parseInt(req.params.postId);
+    const userId: number = req.user!.id;
+
+    mediaContentModel.removeLike(postId, userId);
+    res.json({ message: 'Post unliked successfully' });
+  } catch (error) {
+    console.error('Error unliking post:', error);
+    res.status(500).json({ message: 'Server error while unliking post' });
+  }
+};
+
+const checkLikeStatus = async (req: AuthenticatedRequest, res: Response): Promise<void> => {
+  try {
+    const postId = parseInt(req.params.postId);
+    const userId: number = req.user!.id;
+
+    const liked: tykkäykset | undefined = mediaContentModel.checkUserLiked(postId, userId);
+    res.json({ liked: !!liked });
+  } catch (error) {
+    console.error('Error checking like status:', error);
+    res.status(500).json({ message: 'Server error while checking like status' });
+  }
+};
+
+//  TRAVEL PLANS (MATKA-AIKEET)
+
+const getTravelPlans = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const plans: matkaAikeet[] = mediaContentModel.getTravelPlans();
+    res.json(plans);
+  } catch (error) {
+    console.error('Error fetching travel plans:', error);
+    res.status(500).json({ message: 'Server error while fetching travel plans' });
+  }
+};
+
+const getTravelPlan = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const planId = parseInt(req.params.id);
+    const plan: matkaAikeet | undefined = mediaContentModel.getTravelPlanById(planId);
+
+    if (!plan) {
+      res.status(404).json({ message: 'Travel plan not found' });
+      return;
+    }
+
+    res.json(plan);
+  } catch (error) {
+    console.error('Error fetching travel plan:', error);
+    res.status(500).json({ message: 'Server error while fetching travel plan' });
+  }
+};
+
+const getUserTravelPlans = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const userId = parseInt(req.params.userId);
+    const plans: matkaAikeet[] = mediaContentModel.getUserTravelPlans(userId);
+    res.json(plans);
+  } catch (error) {
+    console.error('Error fetching user travel plans:', error);
+    res.status(500).json({ message: 'Server error while fetching user travel plans' });
+  }
+};
+
+const createTravelPlan = async (req: AuthenticatedRequest, res: Response): Promise<void> => {
+  try {
+    const { kohde, suunniteltu_alku_pvm, suunniteltu_loppu_pvm, aktiviteetit, budjetti, kuvaus } =
+      req.body as Pick<matkaAikeet, 'kohde' | 'suunniteltu_alku_pvm' | 'suunniteltu_loppu_pvm' | 'aktiviteetit' | 'budjetti' | 'kuvaus'>;
+    const userId: number = req.user!.id;
+
+    if (!kohde || !suunniteltu_alku_pvm || !suunniteltu_loppu_pvm) {
+      res.status(400).json({ message: 'Destination and dates are required' });
+      return;
+    }
+
+    const result = mediaContentModel.createTravelPlan(
+      userId,
+      kohde,
+      suunniteltu_alku_pvm instanceof Date ? suunniteltu_alku_pvm.toISOString() : suunniteltu_alku_pvm,
+      suunniteltu_loppu_pvm instanceof Date ? suunniteltu_loppu_pvm.toISOString() : suunniteltu_loppu_pvm,
+      aktiviteetit ? JSON.stringify(aktiviteetit) : undefined,
+      budjetti ? JSON.stringify(budjetti) : undefined,
+      kuvaus
+    );
+
+    const newPlan: matkaAikeet | undefined = mediaContentModel.getTravelPlanById(result.lastInsertRowid as number);
+    res.status(201).json(newPlan);
+  } catch (error) {
+    console.error('Error creating travel plan:', error);
+    res.status(500).json({ message: 'Server error while creating travel plan' });
+  }
+};
+
+const updateTravelPlan = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const planId = parseInt(req.params.id);
+    mediaContentModel.updateTravelPlan(planId, req.body as Partial<matkaAikeet>);
+
+    const updatedPlan: matkaAikeet | undefined = mediaContentModel.getTravelPlanById(planId);
+    res.json(updatedPlan);
+  } catch (error) {
+    console.error('Error updating travel plan:', error);
+    res.status(500).json({ message: 'Server error while updating travel plan' });
+  }
+};
+
+const deleteTravelPlan = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const planId = parseInt(req.params.id);
+    mediaContentModel.deleteTravelPlan(planId);
+    res.json({ message: 'Travel plan deleted successfully' });
+  } catch (error) {
+    console.error('Error deleting travel plan:', error);
+    res.status(500).json({ message: 'Server error while deleting travel plan' });
+  }
+};
+
+//  Friend requests (KAVERIPYYNNÖT)
+
+const getBuddyRequests = async (req: AuthenticatedRequest, res: Response): Promise<void> => {
+  try {
+    const userId: number = req.user!.id;
+    const requests: friendRequest[] = mediaContentModel.getBuddyRequests(userId);
+    res.json(requests);
+  } catch (error) {
+    console.error('Error fetching buddy requests:', error);
+    res.status(500).json({ message: 'Server error while fetching buddy requests' });
+  }
+};
+
+const getPlanBuddyRequests = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const planId = parseInt(req.params.planId);
+    const requests: friendRequest[] = mediaContentModel.getPlanBuddyRequests(planId);
+    res.json(requests);
+  } catch (error) {
+    console.error('Error fetching plan buddy requests:', error);
+    res.status(500).json({ message: 'Server error while fetching plan buddy requests' });
+  }
+};
+
+const sendBuddyRequest = async (req: AuthenticatedRequest, res: Response): Promise<void> => {
+  try {
+    const planId = parseInt(req.params.planId);
+    const { message } = req.body as Pick<friendRequest, 'message'>;
+    const requesterId: number = req.user!.id;
+
+    const plan: matkaAikeet | undefined = mediaContentModel.getTravelPlanById(planId);
+    if (!plan) {
+      res.status(404).json({ message: 'Travel plan not found' });
+      return;
+    }
+
+    const result = mediaContentModel.createBuddyRequest(planId, requesterId, (plan as any).userId, message);
+    res.status(201).json({ id: result.lastInsertRowid, message: 'Buddy request sent successfully' });
+  } catch (error) {
+    console.error('Error sending buddy request:', error);
+    res.status(500).json({ message: 'Server error while sending buddy request' });
+  }
+};
+
+const acceptBuddyRequest = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const requestId = parseInt(req.params.id);
+    mediaContentModel.acceptBuddyRequest(requestId);
+    res.json({ message: 'Buddy request accepted' });
+  } catch (error) {
+    console.error('Error accepting buddy request:', error);
+    res.status(500).json({ message: 'Server error while accepting buddy request' });
+  }
+};
+
+const rejectBuddyRequest = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const requestId = parseInt(req.params.id);
+    mediaContentModel.rejectBuddyRequest(requestId);
+    res.json({ message: 'Buddy request rejected' });
+  } catch (error) {
+    console.error('Error rejecting buddy request:', error);
+    res.status(500).json({ message: 'Server error while rejecting buddy request' });
+  }
+};
+
+//  Trip participants (MATKAN OSALLISTUJAT)
+
+const getTripParticipants = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const planId = parseInt(req.params.planId);
+    const participants: tripParticipants[] = mediaContentModel.getTripParticipants(planId);
+    res.json(participants);
+  } catch (error) {
+    console.error('Error fetching trip participants:', error);
+    res.status(500).json({ message: 'Server error while fetching trip participants' });
+  }
+};
+
+const removeTripParticipant = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const participantId = parseInt(req.params.id);
+    mediaContentModel.removeTripParticipant(participantId);
+    res.json({ message: 'Participant removed successfully' });
+  } catch (error) {
+    console.error('Error removing participant:', error);
+    res.status(500).json({ message: 'Server error while removing participant' });
+  }
+};
+
+//  Viestit
+
+const getConversations = async (req: AuthenticatedRequest, res: Response): Promise<void> => {
+  try {
+    const userId: number = req.user!.id;
+    const conversations = mediaContentModel.getUserConversations(userId);
+    res.json(conversations);
+  } catch (error) {
+    console.error('Error fetching conversations:', error);
+    res.status(500).json({ message: 'Server error while fetching conversations' });
+  }
+};
+
+const getMessages = async (req: AuthenticatedRequest, res: Response): Promise<void> => {
+  try {
+    const otherUserId = parseInt(req.params.userId);
+    const currentUserId: number = req.user!.id;
+
+    const messages: chatMessages[] = mediaContentModel.getConversation(currentUserId, otherUserId);
+    res.json(messages);
+  } catch (error) {
+    console.error('Error fetching messages:', error);
+    res.status(500).json({ message: 'Server error while fetching messages' });
+  }
+};
+
+const sendMessage = async (req: AuthenticatedRequest, res: Response): Promise<void> => {
+  try {
+    const { receiverId, message } = req.body as { receiverId: number; message: string };
+    const senderId: number = req.user!.id;
+
+    if (!message) {
+      res.status(400).json({ message: 'Message text is required' });
+      return;
+    }
+
+    const result = mediaContentModel.sendMessage(senderId, receiverId, message);
+    res.status(201).json({ id: result.lastInsertRowid, message: 'Message sent successfully' });
+  } catch (error) {
+    console.error('Error sending message:', error);
+    res.status(500).json({ message: 'Server error while sending message' });
+  }
+};
+
+//  Notifications (ILMOITUKSET)
+
+const getNotifications = async (req: AuthenticatedRequest, res: Response): Promise<void> => {
+  try {
+    const userId: number = req.user!.id;
+    const notifications: notifications[] = mediaContentModel.getNotificationsForUser(userId);
+    res.json(notifications);
+  } catch (error) {
+    console.error('Error fetching notifications:', error);
+    res.status(500).json({ message: 'Server error while fetching notifications' });
+  }
+};
+
+const markNotificationAsRead = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const notificationId = parseInt(req.params.id);
+    mediaContentModel.markNotificationAsRead(notificationId);
+    res.json({ message: 'Notification marked as read' });
+  } catch (error) {
+    console.error('Error marking notification as read:', error);
+    res.status(500).json({ message: 'Server error while marking notification as read' });
+  }
+};
+
+const markAllNotificationsAsRead = async (req: AuthenticatedRequest, res: Response): Promise<void> => {
+  try {
+    const userId: number = req.user!.id;
+    mediaContentModel.markAllNotificationsAsRead(userId);
+    res.json({ message: 'All notifications marked as read' });
+  } catch (error) {
+    console.error('Error marking all notifications as read:', error);
+    res.status(500).json({ message: 'Server error while marking all notifications as read' });
+  }
+};
+
+const deleteNotification = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const notificationId = parseInt(req.params.id);
+    mediaContentModel.deleteNotification(notificationId);
+    res.json({ message: 'Notification deleted successfully' });
+  } catch (error) {
+    console.error('Error deleting notification:', error);
+    res.status(500).json({ message: 'Server error while deleting notification' });
+  }
+};
+
+export {
+  // Posts
+  getFeed, getPost, getUserPosts, createPost, updatePost, deletePost, searchPosts, getTrendingPosts,
+  // Comments
+  getComments, addComment, deleteComment,
+  // Likes
+  likePost, unlikePost, checkLikeStatus,
+  // Travel Plans
+  getTravelPlans, getTravelPlan, getUserTravelPlans, createTravelPlan, updateTravelPlan, deleteTravelPlan,
+  // Buddy Requests
+  getBuddyRequests,
+  getPlanBuddyRequests,
+  sendBuddyRequest,
+  acceptBuddyRequest,
+  rejectBuddyRequest,
+  // Trip Participants
+  getTripParticipants,
+  removeTripParticipant,
+  // Messages
+  getConversations,
+  getMessages,
+  sendMessage,
+  // Notifications
+  getNotifications,
+  markNotificationAsRead,
+  markAllNotificationsAsRead,
+  deleteNotification,
+};
