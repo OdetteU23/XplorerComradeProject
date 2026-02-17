@@ -23,10 +23,10 @@
 #   https://github.com/Azure/actions-workflow-samples/tree/master/FunctionApp
 
 # Flow:
-#   1. Push to test-env  →  CI runs (type-check, lint, tests)
-#   2. CI passes          →  manually merge/PR to main
-#   3. Push to main       →  CI re-runs to validate merged code
-#   4. Manual trigger     →  deploy to Azure (Actions tab → Run workflow)
+#   1. Push to test-env  -→  CI runs (type-check, lint, tests)
+#   2. CI passes          -→  manually merge/PR to main
+#   3. Push to main       -→  CI re-runs to validate merged code
+#   4. Manual trigger     -→  deploy to Azure (Actions tab → Run workflow)
 
 name: Deploy Node.js project to Azure Function App
 

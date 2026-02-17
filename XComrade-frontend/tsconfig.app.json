@@ -1,13 +1,11 @@
 {
   "compilerOptions": {
     "target": "ES2020",
-    "ignoreDeprecations": "6.0",
-    "useDefineForClassFields": true,
     "lib": ["ES2020", "DOM", "DOM.Iterable"],
     "module": "ESNext",
     "skipLibCheck": true,
     /* Module resolution settings */
-    "baseUrl": ".",
+    /*"baseUrl": ".", */
     "paths": {
       "@/*": [
         "./src/*"
