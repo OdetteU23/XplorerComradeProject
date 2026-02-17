@@ -1,0 +1,204 @@
+# This workflow builds and type-checks the Node.js project on push to test-env,
+# and deploys it to Azure Function Apps when a commit is pushed to main.
+#
+# This workflow assumes you have already created the target Azure Functions app(s).
+# For instructions see:
+#   - https://learn.microsoft.com/en-us/azure/azure-functions/create-first-function-vs-code-node
+#   - https://learn.microsoft.com/en-us/azure/azure-functions/create-first-function-vs-code-typescript
+#
+# To configure this workflow:
+# 1. Set up the following secrets in your repository:
+#   - AZURE_FUNCTIONAPP_PUBLISH_PROFILE_AUTH
+#   - AZURE_FUNCTIONAPP_PUBLISH_PROFILE_MEDIA
+#   - AZURE_FUNCTIONAPP_PUBLISH_PROFILE_UPLOAD
+# 2. Change the env variables below for your configuration.
+#
+# For more information on:
+#   - GitHub Actions for Azure: https://github.com/Azure/Actions
+#   - Azure Functions Action: https://github.com/Azure/functions-action
+#   - Publish Profile: https://github.com/Azure/functions-action#using-publish-profile-as-deployment-credential-recommended
+#   - Azure Service Principal for RBAC: https://github.com/Azure/functions-action#using-azure-service-principal-for-rbac-as-deployment-credential
+#
+# For more samples to get started with GitHub Action workflows to deploy to Azure:
+#   https://github.com/Azure/actions-workflow-samples/tree/master/FunctionApp
+
+# Flow:
+#   1. Push to test-env  →  CI runs (type-check, lint, tests)
+#   2. CI passes          →  manually merge/PR to main
+#   3. Push to main       →  CI re-runs + deploy to Azure
+
+name: Deploy Node.js project to Azure Function App
+
+on:
+  push:
+    branches:
+      - test-env  # CI only — catches errors before merging
+      - main      # CI + deploy — re-validates then deploys to Azure
+  pull_request:
+    branches: [main]
+
+env:
+  NODE_VERSION: '20.x'
+  # TODO: Replacing these with the actual Azure Function App names
+  AZURE_FUNCTIONAPP_NAME_AUTH: 'xplorercomrade-auth'
+  AZURE_FUNCTIONAPP_NAME_MEDIA: 'xplorercomrade-media'
+  AZURE_FUNCTIONAPP_NAME_UPLOAD: 'xplorercomrade-upload'
+
+jobs:
+  # --------------->
+  # CI: Backend servers => parallel via matrix, runs on ALL triggers
+  # --------------->
+  ci-backend:
+    name: CI — ${{ matrix.server }}
+    runs-on: ubuntu-latest
+
+    strategy:
+      fail-fast: false
+      matrix:
+        server: [auth-server, mediaContent-server, upload-server]
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+
+      # Shared types —-> compile time dependency only, not a deployable service.
+      # dist/ is gitignored --> it is only compiled to resolve imports.
+      - name: Resolve shared types
+        run: cd XComrade-hybrid-types && npm install && npm run build
+
+      - name: Install dependencies
+        working-directory: XComrade-backend/${{ matrix.server }}
+        run: npm install
+
+      - name: TypeScript type-check
+        working-directory: XComrade-backend/${{ matrix.server }}
+        run: npx tsc --noEmit
+
+      - name: Lint
+        working-directory: XComrade-backend/${{ matrix.server }}
+        run: npx eslint . --max-warnings 0
+        continue-on-error: true
+
+      # TODO: Uncommenting this section  when jest configs and tests are ready
+      # - name: Run tests
+      #   working-directory: XComrade-backend/${{ matrix.server }}
+      #   run: npm test
+
+  # ------>
+  # CI: Frontend
+  # -------->
+  ci-frontend:
+    name: CI — Frontend Build & Type-check
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+
+      - name: Resolve shared types
+        run: cd XComrade-hybrid-types && npm install && npm run build
+
+      - name: Install dependencies
+        working-directory: XComrade-frontend
+        run: npm install
+
+      - name: TypeScript type-check
+        working-directory: XComrade-frontend
+        run: npx tsc --noEmit
+
+      - name: Build frontend
+        working-directory: XComrade-frontend
+        run: npm run build
+
+  # -------->
+  # CI Gate —-> all CI jobs must pass before deploy is allowed
+  # -------->
+  ci-gate:
+    name: CI Gate —-> Check all CI jobs passed
+    runs-on: ubuntu-latest
+    needs: [ci-backend, ci-frontend]
+    if: always()
+
+    steps:
+      - name: Check all CI jobs passed
+        run: |
+          echo "Backend Servers: ${{ needs.ci-backend.result }}"
+          echo "Frontend:        ${{ needs.ci-frontend.result }}"
+
+          if [[ "${{ needs.ci-backend.result }}" != "success" ]] || \
+             [[ "${{ needs.ci-frontend.result }}" != "success" ]]; then
+            echo " One or more CI jobs failed!"
+            exit 1
+          fi
+
+          echo "All CI checks passed —-> safe to merge to main"
+
+  # -------->
+  # Deploy to Azure Function Apps ==> ONLY on push to main
+  # -------->
+  deploy:
+    name: Deploy to Azure
+    runs-on: ubuntu-latest
+    needs: ci-gate
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+
+    environment:
+      name: XComrade-Production
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+
+      - name: Resolve shared types
+        run: cd XComrade-hybrid-types && npm install && npm run build
+
+      # ──> Build auth-server 
+      - name: Build auth-server
+        run: |
+          cd XComrade-backend/auth-server
+          npm install
+          npm run build
+
+      - name: Deploy auth-server
+        uses: Azure/functions-action@v1
+        with:
+          app-name: ${{ env.AZURE_FUNCTIONAPP_NAME_AUTH }}
+          package: XComrade-backend/auth-server
+          publish-profile: ${{ secrets.AZURE_FUNCTIONAPP_PUBLISH_PROFILE_AUTH }}
+
+      # ──> Build mediaContent-server 
+      - name: Build mediaContent-server
+        run: |
+          cd XComrade-backend/mediaContent-server
+          npm install
+          npm run build
+
+      - name: Deploy mediaContent-server
+        uses: Azure/functions-action@v1
+        with:
+          app-name: ${{ env.AZURE_FUNCTIONAPP_NAME_MEDIA }}
+          package: XComrade-backend/mediaContent-server
+          publish-profile: ${{ secrets.AZURE_FUNCTIONAPP_PUBLISH_PROFILE_MEDIA }}
+
+      # ──> Build upload-server 
+      - name: Build upload-server
+        run: |
+          cd XComrade-backend/upload-server
+          npm install
+          npm run build
+
+      - name: Deploy upload-server
+        uses: Azure/functions-action@v1
+        with:
+          app-name: ${{ env.AZURE_FUNCTIONAPP_NAME_UPLOAD }}
+          package: XComrade-backend/upload-server
+          publish-profile: ${{ secrets.AZURE_FUNCTIONAPP_PUBLISH_PROFILE_UPLOAD }}

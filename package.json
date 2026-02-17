@@ -4,20 +4,20 @@
   "description": "XplorerComrade app's  Monorepo containing frontend-server, backend-server, and shared types packages",
   "private": true,
   "workspaces": [
-    "XplorerComrade-backend-server",
-    "XplorerComrade-frontend-server",
-    "XplorerComrade-hybrid-types-server"
+    "XComrade-backend",
+    "XComrade-frontend",
+    "XComrade-hybrid-types"
   ],
   "scripts": {
     "install:all": "npm install",
-    "build:types": "npm run build --workspace=XplorerComrade-hybrid-types-server",
-    "build:backend": "npm run build --workspace=XplorerComrade-backend-server",
-    "build:frontend": "npm run build --workspace=XplorerComrade-frontend-server",
+    "build:types": "npm run build --workspace=XComrade-hybrid-types",
+    "build:backend": "npm run build --workspace=XComrade-backend",
+    "build:frontend": "npm run build --workspace=XComrade-frontend",
     "build:all": "npm run build:types && npm run build:backend && npm run build:frontend",
-    "dev:backend": "npm run dev --workspace=XplorerComrade-backend-server",
-    "dev:frontend": "npm run dev --workspace=XplorerComrade-frontend-server",
-    "test:backend": "npm run test --workspace=XplorerComrade-backend-server",
-    "test:frontend": "npm run test --workspace=XplorerComrade-frontend-server"
+    "dev:backend": "npm run dev --workspace=XComrade-backend",
+    "dev:frontend": "npm run dev --workspace=XComrade-frontend",
+    "test:backend": "npm run test --workspace=XComrade-backend",
+    "test:frontend": "npm run test --workspace=XComrade-frontend"
   },
   "keywords": [
     "traveling",
