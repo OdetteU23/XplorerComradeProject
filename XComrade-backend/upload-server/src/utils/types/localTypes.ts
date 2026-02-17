@@ -1,5 +1,5 @@
 //import { Response as ExpressResponse } from 'express';
-//import { chatMessages } from '@xplorercomrade/types-server';
+//import { chatMessages } from '@xcomrade/types-server';
 
 declare module 'express-serve-static-core' {
   interface Request {

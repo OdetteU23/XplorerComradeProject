@@ -9,7 +9,7 @@ import type {
   chatMessages,
   friendRequest,
   tripParticipants
-} from '@xplorercomrade/types-server';
+} from '@xcomrade/types-server';
 import type { RunResult } from 'better-sqlite3';
 
 const postContentsModel = {

@@ -1,5 +1,5 @@
 import db from '../../database/db-manipulation';
-import type { userProfile, registeringInfo } from '@xplorercomrade/types';
+import type { userProfile, registeringInfo } from '@xcomrade/types-server';
 
 interface UserRow {
   id: number;

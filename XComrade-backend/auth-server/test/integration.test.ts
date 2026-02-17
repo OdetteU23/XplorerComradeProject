@@ -3,7 +3,7 @@ import request from 'supertest';
 import express, { Application } from 'express';
 import authRoutes from '../src/api/routes/authRoutes';
 import db from '../src/database/db-manipulation';
-import { registeringInfo, loginInfo } from '@xplorercomrade/types';
+import { registeringInfo, loginInfo } from '@xcomrade/types-server';
 
 // Create minimal express app for testing
 const app: Application = express();

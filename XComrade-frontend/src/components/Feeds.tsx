@@ -1,4 +1,4 @@
-import type { julkaisu, julkaisuWithRelations, kommentti, tykkäykset, userProfile, media_images } from '@xplorercomrade/types-server';
+import type { julkaisu, julkaisuWithRelations, kommentti, tykkäykset, userProfile, media_images } from '@xcomrade/types-server';
 import { useState } from 'react';
 
 /* Post/Feed Components:

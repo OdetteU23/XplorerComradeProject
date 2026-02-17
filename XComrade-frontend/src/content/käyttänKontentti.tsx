@@ -1,5 +1,5 @@
 import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import type { loginInfo, registeringInfo, userProfile } from '@xplorercomrade/types-server';
+import type { loginInfo, registeringInfo, userProfile } from '@xcomrade/types-server';
 import type { UserContextType } from '../../utilHelpers/types/localTypes';
 import { api } from '../../utilHelpers/FetchingData';
 

@@ -1,4 +1,4 @@
-import type { julkaisuWithRelations, userProfile } from '@xplorercomrade/types-server';
+import type { julkaisuWithRelations, userProfile } from '@xcomrade/types-server';
 import { useState, useEffect } from 'react';
 import { FeedList } from '../components/Feeds';
 import { SearchBar } from '../components/Forms';

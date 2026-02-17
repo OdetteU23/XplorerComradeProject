@@ -1,4 +1,4 @@
-import type { matkaAikeet, friendRequest, tripParticipants, userProfile } from '@xplorercomrade/types-server';
+import type { matkaAikeet, friendRequest, tripParticipants, userProfile } from '@xcomrade/types-server';
 import type { TravelPlanWithUser, ParticipantWithUser, BuddyRequestWithUser } from '../../utilHelpers/types/localTypes';
 import { useState, useEffect } from 'react';
 import { TravelPlanList, TravelPlanForm, ParticipantsList, BuddyRequestCard } from '../components/TravelPlans';

@@ -6,7 +6,7 @@
   "workspaces": [
     "XComrade-backend",
     "XComrade-frontend",
-    "XComrade-hybrid-types"
+    "XplorerComrade-hybrid-types-server"
   ],
   "scripts": {
     "install:all": "npm install",

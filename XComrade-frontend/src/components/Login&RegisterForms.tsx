@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import type { loginInfo, registeringInfo } from '@xplorercomrade/types-server';
+import type { loginInfo, registeringInfo } from '@xcomrade/types-server';
 import { useAuthentication } from '../hooks/mainHook';
 import { useNavigate } from 'react-router-dom';
 

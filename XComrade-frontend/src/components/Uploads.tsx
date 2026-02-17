@@ -1,4 +1,4 @@
-import { media_images } from '@xplorercomrade/types-server';
+import { media_images } from '@xcomrade/types-server';
 import { useState } from 'react';
 
 /*Media Components:

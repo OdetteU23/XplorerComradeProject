@@ -2,7 +2,7 @@
 import type {userProfile, loginInfo,
   registeringInfo, julkaisu, julkaisuWithRelations, matkaAikeet, kommentti, tykkäykset, seuranta, chatMessages,
   notifications, friendRequest, tripParticipants, MessageResponse, ErrorResponse, BooleanResponse,
-} from '@xplorercomrade/types-server';
+} from '@xcomrade/types-server';
 
 // API Base URLs - Update these to match your backend servers
 // auth-server runs on port 3000

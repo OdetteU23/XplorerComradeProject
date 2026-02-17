@@ -4,7 +4,7 @@ import jwt from 'jsonwebtoken';
 import { generateToken } from '../src/middleware/auth';
 import userModel from '../src/api/models/userModel';
 import db from '../src/database/db-manipulation';
-import type { registeringInfo } from '@xplorercomrade/types';
+import type { registeringInfo } from '@xcomrade/types-server';
 
 describe('Authentication Unit Tests', () => {
   // Clean up database before each test

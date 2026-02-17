@@ -1,4 +1,4 @@
-import type { userProfile, julkaisuWithRelations, friendRequest, matkaAikeet } from '@xplorercomrade/types-server';
+import type { userProfile, julkaisuWithRelations, friendRequest, matkaAikeet } from '@xcomrade/types-server';
 import type { UserStats, BuddyRequestWithUser, TravelPlanWithUser } from '../../utilHelpers/types/localTypes';
 import { useState, useEffect } from 'react';
 import { ProfileHeader, UserList } from '../components/Profile';

@@ -1,4 +1,4 @@
-import type { chatMessages, notifications, userProfile } from '@xplorercomrade/types-server';
+import type { chatMessages, notifications, userProfile } from '@xcomrade/types-server';
 import { useState } from 'react';
 
 // {Messaging Components}

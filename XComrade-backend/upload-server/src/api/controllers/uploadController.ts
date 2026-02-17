@@ -2,7 +2,7 @@
 import fs from 'fs';
 import { UploadMessage } from '../../utils/types/localTypes';
 import { Request, Response, NextFunction } from 'express';
-//import { chatMessages } from '@xplorercomrade/types-server';
+//import { chatMessages } from '@xcomrade/types-server';
 //import { error } from 'console';
 import CustomError from '../../classes/CustomErrors';
 

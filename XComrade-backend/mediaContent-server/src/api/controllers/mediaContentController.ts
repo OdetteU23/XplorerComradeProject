@@ -10,7 +10,7 @@ import type {
   friendRequest,
   tripParticipants,
   userProfile
-} from '@xplorercomrade/types-server';
+} from '@xcomrade/types-server';
 import mediaContentModel from '../models/mediaContentModel';
 
 // Extend Express Request to include authenticated user

@@ -1,6 +1,6 @@
 import { Request, Response } from 'express';
 import bcrypt from 'bcryptjs';
-import type { loginInfo, registeringInfo } from '@xplorercomrade/types-server';
+import type { loginInfo, registeringInfo } from '@xcomrade/types-server';
 import userModel from '../models/userModel';
 import { generateToken } from '../../middleware/auth';
 

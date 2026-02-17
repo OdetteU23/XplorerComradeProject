@@ -1,4 +1,4 @@
-import type { chatMessages, notifications, userProfile } from '@xplorercomrade/types-server';
+import type { chatMessages, notifications, userProfile } from '@xcomrade/types-server';
 import type { Conversation } from '../../utilHelpers/types/localTypes';
 import { useState, useEffect } from 'react';
 import { ChatList, ChatWindow } from '../components/Messages&Notifics';

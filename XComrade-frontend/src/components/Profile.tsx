@@ -1,4 +1,4 @@
-import type { userProfile, seuranta } from '@xplorercomrade/types-server';
+import type { userProfile, seuranta } from '@xcomrade/types-server';
 import { useState } from 'react';
 
 /*

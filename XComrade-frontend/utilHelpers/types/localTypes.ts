@@ -6,7 +6,7 @@ import type {
   tripParticipants, 
   notifications,
   chatMessages 
-} from '@xplorercomrade/types-server';
+} from '@xcomrade/types-server';
 
 // Authentication types
 export type authens = {

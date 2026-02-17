@@ -1,4 +1,4 @@
-import { loginInfo, registeringInfo } from '@xplorercomrade/types-server';
+import { loginInfo, registeringInfo } from '@xcomrade/types-server';
 import { useState } from 'react';
 
 /* Form Components:

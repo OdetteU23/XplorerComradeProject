@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import type { loginInfo, registeringInfo } from '@xplorercomrade/types-server';
+import type { loginInfo, registeringInfo } from '@xcomrade/types-server';
 import { api } from '../../utilHelpers/FetchingData';
 import { useKäyttäjä } from '../content/käyttänKontentti';
 

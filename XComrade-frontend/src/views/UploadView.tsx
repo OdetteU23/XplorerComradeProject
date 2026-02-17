@@ -1,4 +1,4 @@
-import type { julkaisu, julkaisuWithRelations } from '@xplorercomrade/types-server';
+import type { julkaisu, julkaisuWithRelations } from '@xcomrade/types-server';
 import { useState, useEffect } from 'react';
 import { PostForm } from '../components/Feeds';
 import { ImageUpload } from '../components/Uploads';

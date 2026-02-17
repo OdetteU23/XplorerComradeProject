@@ -1,4 +1,4 @@
-import type { matkaAikeet, friendRequest, tripParticipants, userProfile } from '@xplorercomrade/types-server';
+import type { matkaAikeet, friendRequest, tripParticipants, userProfile } from '@xcomrade/types-server';
 import { useState } from 'react';
 /*
   - TravelPlanCard --> Single travel plan display (matkaAikeet)

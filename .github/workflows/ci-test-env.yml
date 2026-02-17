@@ -25,7 +25,8 @@
 # Flow:
 #   1. Push to test-env  →  CI runs (type-check, lint, tests)
 #   2. CI passes          →  manually merge/PR to main
-#   3. Push to main       →  CI re-runs + deploy to Azure
+#   3. Push to main       →  CI re-runs to validate merged code
+#   4. Manual trigger     →  deploy to Azure (Actions tab → Run workflow)
 
 name: Deploy Node.js project to Azure Function App
 
@@ -33,9 +34,21 @@ on:
   push:
     branches:
       - test-env  # CI only — catches errors before merging
-      - main      # CI + deploy — re-validates then deploys to Azure
+      - main      # CI only — re-validates merged code
   pull_request:
     branches: [main]
+  workflow_dispatch:  # Manual deploy — triggered from GitHub Actions tab
+    inputs:
+      deploy_target:
+        description: 'Which servers to deploy'
+        required: true
+        default: 'all'
+        type: choice
+        options:
+          - all
+          - auth-server
+          - mediaContent-server
+          - upload-server
 
 env:
   NODE_VERSION: '20.x'
@@ -67,7 +80,7 @@ jobs:
       # Shared types —-> compile time dependency only, not a deployable service.
       # dist/ is gitignored --> it is only compiled to resolve imports.
       - name: Resolve shared types
-        run: cd XComrade-hybrid-types && npm install && npm run build
+        run: cd XplorerComrade-hybrid-types-server && npm install && npm run build
 
       - name: Install dependencies
         working-directory: XComrade-backend/${{ matrix.server }}
@@ -102,7 +115,7 @@ jobs:
           node-version: ${{ env.NODE_VERSION }}
 
       - name: Resolve shared types
-        run: cd XComrade-hybrid-types && npm install && npm run build
+        run: cd XplorerComrade-hybrid-types-server && npm install && npm run build
 
       - name: Install dependencies
         working-directory: XComrade-frontend
@@ -140,13 +153,14 @@ jobs:
           echo "All CI checks passed —-> safe to merge to main"
 
   # -------->
-  # Deploy to Azure Function Apps ==> ONLY on push to main
+  # Deploy to Azure Function Apps ==> ONLY on manual trigger (workflow_dispatch)
+  # To deploy: GitHub repo → Actions tab → select this workflow → Run workflow
   # -------->
   deploy:
     name: Deploy to Azure
     runs-on: ubuntu-latest
     needs: ci-gate
-    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    if: github.event_name == 'workflow_dispatch'
 
     environment:
       name: XComrade-Production
@@ -159,44 +173,50 @@ jobs:
           node-version: ${{ env.NODE_VERSION }}
 
       - name: Resolve shared types
-        run: cd XComrade-hybrid-types && npm install && npm run build
+        run: cd XplorerComrade-hybrid-types-server && npm install && npm run build
 
-      # ──> Build auth-server 
+      # ──> Build & Deploy auth-server
       - name: Build auth-server
+        if: inputs.deploy_target == 'all' || inputs.deploy_target == 'auth-server'
         run: |
           cd XComrade-backend/auth-server
           npm install
           npm run build
 
       - name: Deploy auth-server
+        if: inputs.deploy_target == 'all' || inputs.deploy_target == 'auth-server'
         uses: Azure/functions-action@v1
         with:
           app-name: ${{ env.AZURE_FUNCTIONAPP_NAME_AUTH }}
           package: XComrade-backend/auth-server
           publish-profile: ${{ secrets.AZURE_FUNCTIONAPP_PUBLISH_PROFILE_AUTH }}
 
-      # ──> Build mediaContent-server 
+      # ──> Build & Deploy mediaContent-server
       - name: Build mediaContent-server
+        if: inputs.deploy_target == 'all' || inputs.deploy_target == 'mediaContent-server'
         run: |
           cd XComrade-backend/mediaContent-server
           npm install
           npm run build
 
       - name: Deploy mediaContent-server
+        if: inputs.deploy_target == 'all' || inputs.deploy_target == 'mediaContent-server'
         uses: Azure/functions-action@v1
         with:
           app-name: ${{ env.AZURE_FUNCTIONAPP_NAME_MEDIA }}
           package: XComrade-backend/mediaContent-server
           publish-profile: ${{ secrets.AZURE_FUNCTIONAPP_PUBLISH_PROFILE_MEDIA }}
 
-      # ──> Build upload-server 
+      # ──> Build & Deploy upload-server
       - name: Build upload-server
+        if: inputs.deploy_target == 'all' || inputs.deploy_target == 'upload-server'
         run: |
           cd XComrade-backend/upload-server
           npm install
           npm run build
 
       - name: Deploy upload-server
+        if: inputs.deploy_target == 'all' || inputs.deploy_target == 'upload-server'
         uses: Azure/functions-action@v1
         with:
           app-name: ${{ env.AZURE_FUNCTIONAPP_NAME_UPLOAD }}
