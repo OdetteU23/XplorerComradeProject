@@ -93,56 +93,45 @@ const HomeView = () => {
   // to see their posts in the feed.
 
   return (
-    <div className="home-view">
-      <h2>Welcome to XplorerComrade!</h2>
-      <p>Explore the world with fellow travelers 🌍</p>
+    <div className="home-layout">
 
-      {error && (
-        <div className="error-message">
-          <p>{error}</p>
-          <button onClick={loadFeed}>Retry</button>
-        </div>
-      )}
+      {/* LEFT: Main feed from followed users */}
+      <div className="main-feed">
+        {posts.length === 0 ? (
+          <p>You are not following anyone yet. Discover users on the right!</p>
+        ) : (
+          <FeedList
+            posts={posts}
+            onLike={handleLike}
+            onComment={handleComment}
+          />
+        )}
+      </div>
 
-      {isLoading ? (
-        <p>Loading feed...</p>
-      ) : posts.length === 0 ? (
-        <div className="empty-feed">
-          <p>No posts yet. Start following users to see their travel experiences!</p>
-          <div>
-            {/* Todo: Finishing up the random posts and suggested users logic, so that the logic
-            is visible in the UI home */}
+      {/* RIGHT: Discovery sidebar */}
+      <div className="discover-sidebar">
 
-              {/*Implementing here the logic for a user who hasn't followed anyone yet to view random posts
-              from different users and suggest the users/content creators to follow */}
+        {/* Suggested users to follow */}
+        <section>
+          <h3>People you might like</h3>
+          <UserList
+            users={suggestedUsers}
+            title="Suggested Users"
+            emptyMessage="No suggestions available."
+          />
+        </section>
 
-              {randomPosts.length > 0 && (
-                <FeedList
-                  posts={randomPosts}
-                  onLike={handleLike}
-                  onComment={handleComment}
-                />
-              )}
-          </div>
-          <div>
-            {suggestedUsers.length > 0 && (
-              <UserList
-                users={suggestedUsers}
-                title="Suggested Travelers to Follow"
-                emptyMessage="No suggestions at the moment. Check back later!"
-              />
-            )}
-          </div>
-        </div>
+        {/* Random posts from unfollowed users */}
+        <section>
+          <h3>Explore posts</h3>
+          <FeedList
+            posts={randomPosts}
+            onLike={handleLike}
+            onComment={handleComment}
+          />
+        </section>
 
-      ) : (
-        <FeedList
-          posts={posts}
-          onLike={handleLike}
-          onComment={handleComment}
-        />
-
-      )}
+      </div>
     </div>
   );
 };

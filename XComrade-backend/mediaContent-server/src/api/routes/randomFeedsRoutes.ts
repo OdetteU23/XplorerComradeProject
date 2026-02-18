@@ -1,2 +1,12 @@
-//Todo: Implementing routes for random users popping on the user's home feed
-//Todo: Implementing routes for random posts popping on the home page or home feed of the user
+import express from 'express';
+import {getRandomPosts, getRandomUsers} from '../controllers/randomFeedsController';
+//import { authenticateToken } from '../../middlewares/authentication';
+
+//Todo: Add authentication middleware to these routes when ready
+
+const router = express.Router();
+
+router.get('/posts/random', /*authenticateToken,*/ getRandomPosts);
+router.get('/users/random', /*authenticateToken,*/ getRandomUsers);
+
+export default router;
