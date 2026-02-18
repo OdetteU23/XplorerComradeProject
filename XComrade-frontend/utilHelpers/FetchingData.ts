@@ -323,7 +323,24 @@ export const travelPlanAPI = {
   },
 };
 
-// ==================== BUDDY REQUESTS ====================
+//Random posts from different users
+const randomPostAPI = {
+  // Get random posts
+  getRandomPosts: async (count: number = 10): Promise<julkaisuWithRelations[]> => {
+    return fetchAPI<julkaisuWithRelations[]>(MEDIA_API, `/posts/random?count=${count}`);
+  },
+  //Todo: Implementing random posts ENDPOINTS in backend
+};
+const randomUserAPI = {
+  // Get random users
+  getRandomUsers: async (count: number = 10): Promise<userProfile[]> => {
+    return fetchAPI<userProfile[]>(MEDIA_API, `/users/random?count=${count}`);
+  },
+  //Todo: Implementing random users ENDPOINTS in backend
+};
+
+
+//  BUDDY REQUESTS
 
 export const buddyRequestAPI = {
   // Get all buddy requests
@@ -489,7 +506,7 @@ export const mediaAPI = {
   },
 };
 
-// Export all APIs as a single object for convenience
+// Exporting all APIs as a single object for convenience
 export const api = {
   auth: authAPI,
   user: userAPI,
@@ -503,6 +520,8 @@ export const api = {
   message: messageAPI,
   notification: notificationAPI,
   media: mediaAPI,
+  randomPost: randomPostAPI,
+  randomUser: randomUserAPI,
 };
 
 export default api;

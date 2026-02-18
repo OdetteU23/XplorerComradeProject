@@ -56,6 +56,41 @@ const HomeView = () => {
       alert('Failed to add comment');
     }
   };
+  //random posts from different users
+  const [randomPosts, setRandomPosts] = useState<julkaisuWithRelations[]>([]);
+
+  useEffect(() => {
+    loadRandomPosts();
+  }, []);
+
+  const loadRandomPosts = async () => {
+    try {
+      const randomData = await api.randomPost.getRandomPosts();
+      setRandomPosts(randomData);
+    } catch (err) {
+      console.error('Random posts error:', err);
+    }
+  };
+ //Random suggestions for user to see/follow the users/content creators and their content
+ const [suggestedUsers, setSuggestedUsers] = useState<userProfile[]>([]);
+
+ useEffect(() => {
+   loadSuggestedUsers();
+ }, []);
+
+  const loadSuggestedUsers = async () => {
+    try {      const suggestedData = await api.randomUser.getRandomUsers();
+      setSuggestedUsers(suggestedData);
+    }
+      catch (err) {
+      console.error('Suggested users error:', err);
+    }
+  };
+
+  // if the user hasn't followed anyone yet
+  // and the feed is empty. This will be implemented in the future when the follow system is implemented.
+  // For now, we can just show a message that the feed is empty and suggest the user to follow some users
+  // to see their posts in the feed.
 
   return (
     <div className="home-view">
@@ -74,13 +109,39 @@ const HomeView = () => {
       ) : posts.length === 0 ? (
         <div className="empty-feed">
           <p>No posts yet. Start following users to see their travel experiences!</p>
+          <div>
+            {/* Todo: Finishing up the random posts and suggested users logic, so that the logic
+            is visible in the UI home */}
+
+              {/*Implementing here the logic for a user who hasn't followed anyone yet to view random posts
+              from different users and suggest the users/content creators to follow */}
+
+              {randomPosts.length > 0 && (
+                <FeedList
+                  posts={randomPosts}
+                  onLike={handleLike}
+                  onComment={handleComment}
+                />
+              )}
+          </div>
+          <div>
+            {suggestedUsers.length > 0 && (
+              <UserList
+                users={suggestedUsers}
+                title="Suggested Travelers to Follow"
+                emptyMessage="No suggestions at the moment. Check back later!"
+              />
+            )}
+          </div>
         </div>
+
       ) : (
         <FeedList
           posts={posts}
           onLike={handleLike}
           onComment={handleComment}
         />
+
       )}
     </div>
   );
