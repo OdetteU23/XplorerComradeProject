@@ -1,11 +1,11 @@
-import type { 
-  loginInfo, 
-  userProfile, 
-  friendRequest, 
-  matkaAikeet, 
-  tripParticipants, 
+import type {
+  loginInfo,
+  userProfile,
+  friendRequest,
+  matkaAikeet,
+  tripParticipants,
   notifications,
-  chatMessages 
+  chatMessages
 } from '@xcomrade/types-server';
 
 // Authentication types
@@ -37,6 +37,9 @@ export interface UserContextType {
   isAuthenticated: boolean;
   isLoading: boolean;
   login: (credentials: loginInfo) => Promise<void>;
+  register: (data: { käyttäjäTunnus: string;
+    salasana: string; etunimi: string; sukunimi: string;
+    sahkoposti: string }) => Promise<unknown>;
   logout: () => Promise<void>;
   updateUser: (updates: Partial<userProfile>) => void;
 }

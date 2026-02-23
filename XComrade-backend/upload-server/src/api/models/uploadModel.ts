@@ -16,26 +16,26 @@ interface UserRow {
 const userModel = {
   // Find user by username
   findByUsername: (username: string): UserRow | undefined => {
-    const stmt = db.prepare('SELECT * FROM users WHERE käyttäjäTunnus = ?');
+    const stmt = db.prepare('SELECT * FROM käyttäjä WHERE käyttäjäTunnus = ?');
     return stmt.get(username) as UserRow | undefined;
   },
 
   // Find user by email
   findByEmail: (email: string): UserRow | undefined => {
-    const stmt = db.prepare('SELECT * FROM users WHERE sahkoposti = ?');
+    const stmt = db.prepare('SELECT * FROM käyttäjä WHERE sahkoposti = ?');
     return stmt.get(email) as UserRow | undefined;
   },
 
   // Find user by ID
   findById: (id: number): UserRow | undefined => {
-    const stmt = db.prepare('SELECT * FROM users WHERE id = ?');
+    const stmt = db.prepare('SELECT * FROM käyttäjä WHERE id = ?');
     return stmt.get(id) as UserRow | undefined;
   },
 
   // Create new user
   create: (userData: registeringInfo): UserRow => {
     const stmt = db.prepare(`
-      INSERT INTO users (käyttäjäTunnus, salasana, etunimi, sukunimi, sahkoposti, bio, location)
+      INSERT INTO käyttäjä (käyttäjäTunnus, salasana, etunimi, sukunimi, sahkoposti, bio, location)
       VALUES (?, ?, ?, ?, ?, ?, ?)
     `);
 
@@ -75,7 +75,7 @@ const userModel = {
     }
 
     values.push(id);
-    const stmt = db.prepare(`UPDATE users SET ${fields.join(', ')} WHERE id = ?`);
+    const stmt = db.prepare(`UPDATE käyttäjä SET ${fields.join(', ')} WHERE id = ?`);
     stmt.run(...values);
 
     return userModel.findById(id);
@@ -83,9 +83,9 @@ const userModel = {
 
   // Get user stats (posts, followers, following)
   getUserStats: (userId: number): { postsCount: number; followersCount: number; followingCount: number } => {
-    const postsCount = (db.prepare('SELECT COUNT(*) as count FROM posts WHERE user_id = ?').get(userId) as { count: number }).count;
-    const followersCount = (db.prepare('SELECT COUNT(*) as count FROM follows WHERE seurattu_id = ?').get(userId) as { count: number }).count;
-    const followingCount = (db.prepare('SELECT COUNT(*) as count FROM follows WHERE seuraaja_id = ?').get(userId) as { count: number }).count;
+    const postsCount = (db.prepare('SELECT COUNT(*) as count FROM julkaisu WHERE userId = ?').get(userId) as { count: number }).count;
+    const followersCount = (db.prepare('SELECT COUNT(*) as count FROM seuranta WHERE seurattavaId = ?').get(userId) as { count: number }).count;
+    const followingCount = (db.prepare('SELECT COUNT(*) as count FROM seuranta WHERE seuraajaId = ?').get(userId) as { count: number }).count;
 
     return { postsCount, followersCount, followingCount };
   },
@@ -94,7 +94,7 @@ const userModel = {
   searchUsers: (query: string): UserRow[] => {
     const searchPattern = `%${query}%`;
     const stmt = db.prepare(`
-      SELECT * FROM users
+      SELECT * FROM käyttäjä
       WHERE käyttäjäTunnus LIKE ?
       OR etunimi LIKE ?
       OR sukunimi LIKE ?

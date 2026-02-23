@@ -9,7 +9,7 @@ import type { registeringInfo } from '@xcomrade/types-server';
 describe('Authentication Unit Tests', () => {
   // Clean up database before each test
   beforeEach(() => {
-    db.prepare('DELETE FROM users').run();
+    db.prepare('DELETE FROM käyttäjä').run();
   });
 
   afterAll(() => {

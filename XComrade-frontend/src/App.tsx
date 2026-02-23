@@ -35,11 +35,7 @@ const App = () => {
                 <SearchView />
               </ProtectedRoute>
             } />
-            <Route path="/explore" element={
-              <ProtectedRoute>
-                <ExploreView />
-              </ProtectedRoute>
-            } />
+            <Route path="/explore" element={<ExploreView />} />
             <Route path="/messages" element={
               <ProtectedRoute>
                 <MessagesView />

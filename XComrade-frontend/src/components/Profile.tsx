@@ -1,4 +1,4 @@
-import type { userProfile, seuranta } from '@xcomrade/types-server';
+import type { userProfile, seuranta, UserSearchResult } from '@xcomrade/types-server';
 import { useState } from 'react';
 
 /*
@@ -125,11 +125,16 @@ const FollowButton = ({ isFollowing, onToggle }: FollowButtonProps) => {
 };
 
 interface UserListProps {
-  users: userProfile[];
+  users: (userProfile | UserSearchResult)[];
   title?: string;
   onUserClick?: (userId: number) => void;
   emptyMessage?: string;
 }
+
+// Type guard to check if a user object has stats (UserSearchResult)
+const hasStats = (user: userProfile | UserSearchResult): user is UserSearchResult => {
+  return 'postsCount' in user && 'followersCount' in user;
+};
 
 const UserList = ({
   users,
@@ -155,6 +160,13 @@ const UserList = ({
                 <h4>{user.etunimi} {user.sukunimi}</h4>
                 <p className="username">@{user.käyttäjäTunnus}</p>
                 {user.location && <p className="location">📍 {user.location}</p>}
+                {hasStats(user) && (
+                  <div className="user-list-stats">
+                    <span>{user.postsCount} posts</span>
+                    <span>{user.followersCount} followers</span>
+                    <span>{user.followingCount} following</span>
+                  </div>
+                )}
               </div>
             </div>
           ))}

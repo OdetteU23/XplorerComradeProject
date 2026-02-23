@@ -1,12 +1,10 @@
 import express from 'express';
 import {getRandomPosts, getRandomUsers} from '../controllers/randomFeedsController';
-//import { authenticateToken } from '../../middlewares/authentication';
-
-//Todo: Add authentication middleware to these routes when ready
+import { optionalAuth } from '../../middleware/mediaContent';
 
 const router = express.Router();
 
-router.get('/posts/random', /*authenticateToken,*/ getRandomPosts);
-router.get('/users/random', /*authenticateToken,*/ getRandomUsers);
+router.get('/posts/random', getRandomPosts);
+router.get('/users/random', optionalAuth, getRandomUsers);
 
 export default router;

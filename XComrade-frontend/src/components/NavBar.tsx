@@ -29,6 +29,9 @@ const NavBar = () => {
               <Link to="/" className="nav-link">
                 <span>🏠</span> Home
               </Link>
+              <Link to="/upload" className="nav-link">
+                <span>📸</span> Upload
+              </Link>
               <Link to="/search" className="nav-link">
                 <span>🔍</span> Search
               </Link>
@@ -41,10 +44,10 @@ const NavBar = () => {
               <Link to="/messages" className="nav-link">
                 <span>💬</span> Messages
               </Link>
-              <Link to="/upload" className="nav-link">
-                <span>📸</span> Upload
+              <Link to="/notifications" className="nav-link">
+                <span>🔔</span> Notifications
               </Link>
-            </div>
+           </div>
 
             <div className="navbar-user">
               <button

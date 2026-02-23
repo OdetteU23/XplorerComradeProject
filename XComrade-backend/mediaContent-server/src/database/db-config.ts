@@ -1,4 +1,7 @@
-const filename = 'XComrade.sqlite';
+import path from 'path';
+
+// Shared database file — all servers use the same XComrade.sqlite at the backend root
+const filename = path.join(__dirname, '..', '..', '..', 'XComrade.sqlite');
 
 const tables = `
 -- Users table (käyttäjä)
@@ -18,11 +21,18 @@ CREATE TABLE IF NOT EXISTS käyttäjä (
 -- Posts table (julkaisu)
 CREATE TABLE IF NOT EXISTS julkaisu (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
-    user_id INTEGER NOT NULL,
+    userId INTEGER NOT NULL,
+    otsikko VARCHAR(200),
+    sisältö TEXT,
     kuvaus TEXT NOT NULL,
     kohde VARCHAR(200) NOT NULL,
-    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (user_id) REFERENCES käyttäjä(id) ON DELETE CASCADE
+    media_url VARCHAR(255),
+    media_type VARCHAR(50),
+    list_aktiviteetti TEXT DEFAULT '[]',
+    Date_ajakohta DATETIME DEFAULT CURRENT_TIMESTAMP,
+    luotu DATETIME DEFAULT CURRENT_TIMESTAMP,
+    päivitetty DATETIME DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (userId) REFERENCES käyttäjä(id) ON DELETE CASCADE
 );
 
 -- Likes table (tykkäykset)
@@ -36,13 +46,13 @@ CREATE TABLE IF NOT EXISTS tykkäykset (
     UNIQUE(julkaisuId, userId)
 );
 
--- Comments table (kommentit)
-CREATE TABLE IF NOT EXISTS kommentit (
+-- Comments table (kommentti)
+CREATE TABLE IF NOT EXISTS kommentti (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     julkaisuId INTEGER NOT NULL,
     userId INTEGER NOT NULL,
     teksti_kenttä TEXT NOT NULL,
-    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    createdAt DATETIME DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (julkaisuId) REFERENCES julkaisu(id) ON DELETE CASCADE,
     FOREIGN KEY (userId) REFERENCES käyttäjä(id) ON DELETE CASCADE
 );
@@ -61,47 +71,50 @@ CREATE TABLE IF NOT EXISTS seuranta (
 -- Travel plans table (matkaAikeet)
 CREATE TABLE IF NOT EXISTS matkaAikeet (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
-    user_id INTEGER NOT NULL,
+    userId INTEGER NOT NULL,
     kohde VARCHAR(200) NOT NULL,
-    aloitusPvm DATE NOT NULL,
-    lopetusPvm DATE NOT NULL,
+    suunniteltu_alku_pvm DATE NOT NULL,
+    suunniteltu_loppu_pvm DATE NOT NULL,
+    aktiviteetit TEXT DEFAULT '[]',
+    budjetti TEXT DEFAULT '[]',
     kuvaus TEXT,
-    budjetti DECIMAL(10, 2),
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (user_id) REFERENCES käyttäjä(id) ON DELETE CASCADE
+    FOREIGN KEY (userId) REFERENCES käyttäjä(id) ON DELETE CASCADE
 );
 
--- Buddy requests table
-CREATE TABLE IF NOT EXISTS buddy_requests (
+-- Buddy requests table (friendRequest)
+CREATE TABLE IF NOT EXISTS friendRequest (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
-    matkasuunnitelmaId INTEGER NOT NULL,
+    matkaAikeetId INTEGER NOT NULL,
     requesterId INTEGER NOT NULL,
+    ownerId INTEGER NOT NULL,
     status VARCHAR(20) DEFAULT 'pending',
     message TEXT,
-    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (matkasuunnitelmaId) REFERENCES matkaAikeet(id) ON DELETE CASCADE,
-    FOREIGN KEY (requesterId) REFERENCES käyttäjä(id) ON DELETE CASCADE
+    createdAt DATETIME DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (matkaAikeetId) REFERENCES matkaAikeet(id) ON DELETE CASCADE,
+    FOREIGN KEY (requesterId) REFERENCES käyttäjä(id) ON DELETE CASCADE,
+    FOREIGN KEY (ownerId) REFERENCES käyttäjä(id) ON DELETE CASCADE
 );
 
--- Trip participants table
-CREATE TABLE IF NOT EXISTS trip_participants (
+-- Trip participants table (tripParticipants)
+CREATE TABLE IF NOT EXISTS tripParticipants (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
-    matkasuunnitelmaId INTEGER NOT NULL,
+    matkaAikeetId INTEGER NOT NULL,
     userId INTEGER NOT NULL,
-    joined_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (matkasuunnitelmaId) REFERENCES matkaAikeet(id) ON DELETE CASCADE,
+    joinedAt DATETIME DEFAULT CURRENT_TIMESTAMP,
+    role VARCHAR(20) DEFAULT 'buddy',
+    FOREIGN KEY (matkaAikeetId) REFERENCES matkaAikeet(id) ON DELETE CASCADE,
     FOREIGN KEY (userId) REFERENCES käyttäjä(id) ON DELETE CASCADE,
-    UNIQUE(matkasuunnitelmaId, userId)
+    UNIQUE(matkaAikeetId, userId)
 );
 
--- Chat messages table
-CREATE TABLE IF NOT EXISTS chat_messages (
+-- Chat messages table (chatMessages)
+CREATE TABLE IF NOT EXISTS chatMessages (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     senderId INTEGER NOT NULL,
     receiverId INTEGER NOT NULL,
     message TEXT NOT NULL,
-    read_status BOOLEAN DEFAULT 0,
-    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    sentAt DATETIME DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (senderId) REFERENCES käyttäjä(id) ON DELETE CASCADE,
     FOREIGN KEY (receiverId) REFERENCES käyttäjä(id) ON DELETE CASCADE
 );
@@ -110,11 +123,11 @@ CREATE TABLE IF NOT EXISTS chat_messages (
 CREATE TABLE IF NOT EXISTS notifications (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     userId INTEGER NOT NULL,
-    type VARCHAR(50) NOT NULL,
+    notificationType VARCHAR(50) NOT NULL,
     message TEXT NOT NULL,
     relatedId INTEGER,
-    read_status BOOLEAN DEFAULT 0,
-    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    isRead BOOLEAN DEFAULT 0,
+    createdAt DATETIME DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (userId) REFERENCES käyttäjä(id) ON DELETE CASCADE
 );
 

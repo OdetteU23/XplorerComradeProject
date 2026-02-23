@@ -1,0 +1,11 @@
+# Next steps:
+- Adding a picture on home page view
+- Reimplementing homepage view with a much better view
+- Updating the profile view --> To add more logics there
+- Fixing the plans view: 
+    ---> to see why the view is not working 
+    ---> To add the logics in the backend and frontend
+- To Fix/reimplement the upload view with clear logics
+-
+-
+-

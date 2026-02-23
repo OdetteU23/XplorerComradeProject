@@ -1,6 +1,7 @@
 import express, { Request, Response, Application } from 'express';
 import cors from 'cors';
 import authRoutes from './api/routes/authRoutes';
+import userRoutes from './api/routes/userRoutes';
 import './database/db-manipulation'; // Initialize database
 
 const app: Application = express();
@@ -25,6 +26,7 @@ app.get('/', (_req: Request, res: Response) => {
 
 // API Routes
 app.use('/api/auth', authRoutes);
+app.use('/api/users', userRoutes);
 
 // Error handling middleware
 // eslint-disable-next-line @typescript-eslint/no-unused-vars

@@ -13,7 +13,7 @@ app.use('/api/auth', authRoutes);
 describe('Authentication API Integration Tests', () => {
   // Clean up database before each test
   beforeEach(() => {
-    db.prepare('DELETE FROM users').run();
+    db.prepare('DELETE FROM käyttäjä').run();
   });
 
   afterAll(() => {

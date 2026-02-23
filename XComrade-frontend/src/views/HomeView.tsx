@@ -1,14 +1,70 @@
-import type { julkaisuWithRelations, userProfile } from '@xcomrade/types-server';
-import { useState, useEffect } from 'react';
+import type { julkaisuWithRelations, userProfile, UserSearchResult } from '@xcomrade/types-server';
+import { useState, useEffect, useReducer } from 'react';
 import { FeedList } from '../components/Feeds';
 import { SearchBar } from '../components/Forms';
 import { UserList } from '../components/Profile';
+import PublicViewPrompt from '../components/publicViewPromp';
+import { useKäyttäjä } from '../content/käyttänKontentti';
 import { api } from '../../utilHelpers/FetchingData';
 
+// ---- useReducer for HomeView ----
+interface HomeState {
+  posts: julkaisuWithRelations[];
+  randomPosts: julkaisuWithRelations[];
+  suggestedUsers: userProfile[];
+  isLoading: boolean;
+  error: string | null;
+}
+
+type HomeAction =
+  | { type: 'FEED_LOADING' }
+  | { type: 'FEED_SUCCESS'; payload: julkaisuWithRelations[] }
+  | { type: 'FEED_ERROR'; payload: string }
+  | { type: 'SET_RANDOM_POSTS'; payload: julkaisuWithRelations[] }
+  | { type: 'SET_SUGGESTED_USERS'; payload: userProfile[] }
+  | { type: 'UPDATE_POST'; payload: julkaisuWithRelations };
+
+const homeInitialState: HomeState = {
+  posts: [],
+  randomPosts: [],
+  suggestedUsers: [],
+  isLoading: true,
+  error: null,
+};
+
+function homeReducer(state: HomeState, action: HomeAction): HomeState {
+  switch (action.type) {
+    case 'FEED_LOADING':
+      return { ...state, isLoading: true, error: null };
+    case 'FEED_SUCCESS':
+      return { ...state, isLoading: false, posts: action.payload };
+    case 'FEED_ERROR':
+      return { ...state, isLoading: false, error: action.payload };
+    case 'SET_RANDOM_POSTS':
+      return { ...state, randomPosts: action.payload };
+    case 'SET_SUGGESTED_USERS':
+      return { ...state, suggestedUsers: action.payload };
+    case 'UPDATE_POST':
+      return {
+        ...state,
+        posts: state.posts.map(p => p.id === action.payload.id ? action.payload : p),
+      };
+    default:
+      return state;
+  }
+}
+
+const GUEST_CONTENT_LIMIT = 5;
+
 const HomeView = () => {
-  const [posts, setPosts] = useState<julkaisuWithRelations[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const [state, dispatch] = useReducer(homeReducer, homeInitialState);
+  const { posts, randomPosts, suggestedUsers, isLoading, error } = state;
+  const { isAuthenticated } = useKäyttäjä();
+
+  // Apply content limit for unauthenticated users
+  const visiblePosts = isAuthenticated ? posts : posts.slice(0, GUEST_CONTENT_LIMIT);
+  const visibleRandomPosts = isAuthenticated ? randomPosts : randomPosts.slice(0, GUEST_CONTENT_LIMIT);
+  const visibleSuggestedUsers = isAuthenticated ? suggestedUsers : suggestedUsers.slice(0, GUEST_CONTENT_LIMIT);
 
   useEffect(() => {
     loadFeed();
@@ -16,14 +72,12 @@ const HomeView = () => {
 
   const loadFeed = async () => {
     try {
-      setIsLoading(true);
+      dispatch({ type: 'FEED_LOADING' });
       const feedData = await api.post.getFeed();
-      setPosts(feedData);
+      dispatch({ type: 'FEED_SUCCESS', payload: feedData });
     } catch (err) {
-      setError('Failed to load feed');
+      dispatch({ type: 'FEED_ERROR', payload: 'Failed to load feed' });
       console.error('Feed error:', err);
-    } finally {
-      setIsLoading(false);
     }
   };
 
@@ -31,11 +85,13 @@ const HomeView = () => {
     try {
       await api.like.likePost(postId);
       // Update the post in the local state
-      setPosts(posts.map(post =>
-        post.id === postId
-          ? { ...post, tykkäykset: [...post.tykkäykset, { id: Date.now(), julkaisuId: postId, userId: 0 }] }
-          : post
-      ));
+      const post = posts.find(p => p.id === postId);
+      if (post) {
+        dispatch({
+          type: 'UPDATE_POST',
+          payload: { ...post, tykkäykset: [...post.tykkäykset, { id: Date.now(), julkaisuId: postId, userId: 0 }] },
+        });
+      }
     } catch (err) {
       console.error('Like error:', err);
       alert('Failed to like post');
@@ -46,19 +102,20 @@ const HomeView = () => {
     try {
       const newComment = await api.comment.addComment(postId, comment);
       // Update the post in the local state
-      setPosts(posts.map(post =>
-        post.id === postId
-          ? { ...post, kommentit: [...post.kommentit, newComment as any] }
-          : post
-      ));
+      const post = posts.find(p => p.id === postId);
+      if (post) {
+        dispatch({
+          type: 'UPDATE_POST',
+          payload: { ...post, kommentit: [...post.kommentit, newComment as any] },
+        });
+      }
     } catch (err) {
       console.error('Comment error:', err);
       alert('Failed to add comment');
     }
   };
-  //random posts from different users
-  const [randomPosts, setRandomPosts] = useState<julkaisuWithRelations[]>([]);
 
+  // Random posts from different users
   useEffect(() => {
     loadRandomPosts();
   }, []);
@@ -66,23 +123,22 @@ const HomeView = () => {
   const loadRandomPosts = async () => {
     try {
       const randomData = await api.randomPost.getRandomPosts();
-      setRandomPosts(randomData);
+      dispatch({ type: 'SET_RANDOM_POSTS', payload: randomData });
     } catch (err) {
       console.error('Random posts error:', err);
     }
   };
- //Random suggestions for user to see/follow the users/content creators and their content
- const [suggestedUsers, setSuggestedUsers] = useState<userProfile[]>([]);
 
- useEffect(() => {
-   loadSuggestedUsers();
- }, []);
+  // Random suggestions for user to see/follow the users/content creators and their content
+  useEffect(() => {
+    loadSuggestedUsers();
+  }, []);
 
   const loadSuggestedUsers = async () => {
-    try {      const suggestedData = await api.randomUser.getRandomUsers();
-      setSuggestedUsers(suggestedData);
-    }
-      catch (err) {
+    try {
+      const suggestedData = await api.randomUser.getRandomUsers();
+      dispatch({ type: 'SET_SUGGESTED_USERS', payload: suggestedData });
+    } catch (err) {
       console.error('Suggested users error:', err);
     }
   };
@@ -92,19 +148,32 @@ const HomeView = () => {
   // For now, we can just show a message that the feed is empty and suggest the user to follow some users
   // to see their posts in the feed.
 
+  if (isLoading) {
+    return (
+      <div className="home-layout">
+        <p>Loading feed...</p>
+      </div>
+    );
+  }
+
   return (
     <div className="home-layout">
 
+      {error && <div className="error-alert"><p>⚠️ {error}</p></div>}
+
       {/* LEFT: Main feed from followed users */}
       <div className="main-feed">
-        {posts.length === 0 ? (
+        {visiblePosts.length === 0 ? (
           <p>You are not following anyone yet. Discover users on the right!</p>
         ) : (
           <FeedList
-            posts={posts}
+            posts={visiblePosts}
             onLike={handleLike}
             onComment={handleComment}
           />
+        )}
+        {!isAuthenticated && posts.length > GUEST_CONTENT_LIMIT && (
+          <PublicViewPrompt message="Sign in to see more travel posts from people you follow!" />
         )}
       </div>
 
@@ -115,7 +184,7 @@ const HomeView = () => {
         <section>
           <h3>People you might like</h3>
           <UserList
-            users={suggestedUsers}
+            users={visibleSuggestedUsers}
             title="Suggested Users"
             emptyMessage="No suggestions available."
           />
@@ -125,10 +194,13 @@ const HomeView = () => {
         <section>
           <h3>Explore posts</h3>
           <FeedList
-            posts={randomPosts}
+            posts={visibleRandomPosts}
             onLike={handleLike}
             onComment={handleComment}
           />
+          {!isAuthenticated && randomPosts.length > GUEST_CONTENT_LIMIT && (
+            <PublicViewPrompt message="Sign in to discover more travel experiences!" />
+          )}
         </section>
 
       </div>
@@ -139,7 +211,7 @@ const HomeView = () => {
 const SearchView = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState<{
-    users: userProfile[];
+    users: UserSearchResult[];
     posts: julkaisuWithRelations[];
   }>({ users: [], posts: [] });
   const [activeTab, setActiveTab] = useState<'users' | 'posts'>('users');
@@ -232,6 +304,11 @@ const ExploreView = () => {
   const [trendingPosts, setTrendingPosts] = useState<julkaisuWithRelations[]>([]);
   const [popularDestinations, setPopularDestinations] = useState<string[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const { isAuthenticated } = useKäyttäjä();
+
+  // Apply content limit for unauthenticated users
+  const visibleTrendingPosts = isAuthenticated ? trendingPosts : trendingPosts.slice(0, GUEST_CONTENT_LIMIT);
+  const visibleDestinations = isAuthenticated ? popularDestinations : popularDestinations.slice(0, GUEST_CONTENT_LIMIT);
 
   useEffect(() => {
     loadTrendingContent();
@@ -265,11 +342,11 @@ const ExploreView = () => {
         <>
           <section className="popular-destinations">
             <h3>🔥 Popular Destinations</h3>
-            {popularDestinations.length === 0 ? (
+            {visibleDestinations.length === 0 ? (
               <p>No trending destinations at the moment.</p>
             ) : (
               <div className="destination-chips">
-                {popularDestinations.map((destination, index) => (
+                {visibleDestinations.map((destination, index) => (
                   <span key={index} className="destination-chip">
                     📍 {destination}
                   </span>
@@ -280,11 +357,11 @@ const ExploreView = () => {
 
           <section className="trending-posts">
             <h3>⭐ Trending Travel Experiences</h3>
-            {trendingPosts.length === 0 ? (
+            {visibleTrendingPosts.length === 0 ? (
               <p>No trending posts at the moment.</p>
             ) : (
               <FeedList
-                posts={trendingPosts}
+                posts={visibleTrendingPosts}
                 onLike={async (id) => {
                   try {
                     await api.like.likePost(id);
@@ -302,6 +379,9 @@ const ExploreView = () => {
                   }
                 }}
               />
+            )}
+            {!isAuthenticated && trendingPosts.length > GUEST_CONTENT_LIMIT && (
+              <PublicViewPrompt message="Sign in to explore all trending travel content!" />
             )}
           </section>
         </>

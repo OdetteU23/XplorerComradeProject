@@ -1,23 +1,66 @@
 import type { julkaisu, julkaisuWithRelations } from '@xcomrade/types-server';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useReducer } from 'react';
 import { PostForm } from '../components/Feeds';
 import { ImageUpload } from '../components/Uploads';
 import { PostCard } from '../components/Feeds';
 import { api } from '../../utilHelpers/FetchingData';
 
+// ---- useReducer for UploadView ----
+type UploadStep = 'post' | 'images';
+
+interface UploadState {
+  isUploading: boolean;
+  uploadedImages: File[];
+  step: UploadStep;
+  error: string | null;
+}
+
+type UploadAction =
+  | { type: 'SET_STEP'; payload: UploadStep }
+  | { type: 'SET_IMAGES'; payload: File[] }
+  | { type: 'UPLOAD_START' }
+  | { type: 'UPLOAD_SUCCESS' }
+  | { type: 'UPLOAD_ERROR'; payload: string }
+  | { type: 'RESET' };
+
+const uploadInitialState: UploadState = {
+  isUploading: false,
+  uploadedImages: [],
+  step: 'post',
+  error: null,
+};
+
+function uploadReducer(state: UploadState, action: UploadAction): UploadState {
+  switch (action.type) {
+    case 'SET_STEP':
+      return { ...state, step: action.payload };
+    case 'SET_IMAGES':
+      return { ...state, uploadedImages: action.payload };
+    case 'UPLOAD_START':
+      return { ...state, isUploading: true, error: null };
+    case 'UPLOAD_SUCCESS':
+      return { ...state, isUploading: false, uploadedImages: [], step: 'post', error: null };
+    case 'UPLOAD_ERROR':
+      return { ...state, isUploading: false, error: action.payload };
+    case 'RESET':
+      return uploadInitialState;
+    default:
+      return state;
+  }
+}
+
 const UploadView = () => {
-  const [isUploading, setIsUploading] = useState(false);
-  const [uploadedImages, setUploadedImages] = useState<File[]>([]);
-  const [step, setStep] = useState<'post' | 'images'>('post');
+  const [state, dispatch] = useReducer(uploadReducer, uploadInitialState);
+  const { isUploading, uploadedImages, step, error } = state;
 
   const handlePostSubmit = async (postData: Partial<julkaisu>) => {
-    setIsUploading(true);
+    dispatch({ type: 'UPLOAD_START' });
 
     try {
       // First, upload images if any
       let imageUrls: string[] = [];
       if (uploadedImages.length > 0) {
-        const uploadedUrls = await api.media.uploadImages(uploadedImages);
+        const uploadedUrls = await api.media.uploadFiles(uploadedImages);
         imageUrls = uploadedUrls
           .map((item) => {
             const mediaItem = item as { url?: string; file_url?: string; filename?: string };
@@ -35,20 +78,17 @@ const UploadView = () => {
       console.log('Post created:', newPost);
       alert('Post published successfully!');
 
-      // Reset form
-      setUploadedImages([]);
-      setStep('post');
+      dispatch({ type: 'UPLOAD_SUCCESS' });
       // TODO: Navigate to home or post detail
     } catch (err) {
       console.error('Upload error:', err);
+      dispatch({ type: 'UPLOAD_ERROR', payload: 'Failed to publish post' });
       alert('Failed to publish post');
-    } finally {
-      setIsUploading(false);
     }
   };
 
   const handleImageUpload = (files: File[]) => {
-    setUploadedImages(files);
+    dispatch({ type: 'SET_IMAGES', payload: files });
     console.log('Images selected:', files);
   };
 
@@ -57,16 +97,18 @@ const UploadView = () => {
       <h2>Create New Post 📸</h2>
       <p>Share your travel experience with the community!</p>
 
+      {error && <div className="error-alert"><p>⚠️ {error}</p></div>}
+
       <div className="upload-steps">
         <button
           className={step === 'post' ? 'active' : ''}
-          onClick={() => setStep('post')}
+          onClick={() => dispatch({ type: 'SET_STEP', payload: 'post' })}
         >
           1. Post Details
         </button>
         <button
           className={step === 'images' ? 'active' : ''}
-          onClick={() => setStep('images')}
+          onClick={() => dispatch({ type: 'SET_STEP', payload: 'images' })}
         >
           2. Add Images ({uploadedImages.length})
         </button>
@@ -77,7 +119,7 @@ const UploadView = () => {
           <div className="post-form-container">
             <PostForm onSubmit={handlePostSubmit} />
             <button
-              onClick={() => setStep('images')}
+              onClick={() => dispatch({ type: 'SET_STEP', payload: 'images' })}
               className="next-step-btn"
             >
               Next: Add Images →
@@ -91,7 +133,7 @@ const UploadView = () => {
               isUploading={isUploading}
             />
             <div className="upload-actions">
-              <button onClick={() => setStep('post')}>← Back</button>
+              <button onClick={() => dispatch({ type: 'SET_STEP', payload: 'post' })}>← Back</button>
               <button
                 onClick={() => handlePostSubmit({})}
                 disabled={isUploading}

@@ -113,9 +113,34 @@ type julkaisuWithRelations = julkaisu & {
     media_images: media_images[];
 };
 
+// User search result — profile + stats
+type UserSearchResult = userProfile & {
+    postsCount: number;
+    followersCount: number;
+    followingCount: number;
+};
+
+// Full user profile with stats and follow status (for profile pages)
+type UserProfileWithStats = userProfile & {
+    postsCount: number;
+    followersCount: number;
+    followingCount: number;
+    isFollowing?: boolean; // present when viewer is authenticated
+};
+
+// Paginated response wrapper
+type PaginatedResponse<T> = {
+    data: T[];
+    total: number;
+    page: number;
+    limit: number;
+    totalPages: number;
+};
+
 
 export type { 
     userProfile, logoutInfo, userDB, julkaisu, seuranta, matkaAikeet, kommentti, 
     tykkäykset, registeringInfo, loginInfo, julkaisuWithRelations, 
-    notifications, media_images, chatMessages, friendRequest, tripParticipants
+    notifications, media_images, chatMessages, friendRequest, tripParticipants,
+    UserSearchResult, UserProfileWithStats, PaginatedResponse
 };

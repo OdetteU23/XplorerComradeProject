@@ -7,8 +7,8 @@ const randomFeedsModel = {
     const posts = db.prepare(`
       SELECT p.*,
              u.id AS user_id, u.käyttäjäTunnus, u.etunimi, u.sukunimi, u.profile_picture_url
-      FROM posts p
-      JOIN users u ON p.userId = u.id
+      FROM julkaisu p
+      JOIN käyttäjä u ON p.userId = u.id
       ORDER BY RANDOM()
       LIMIT ?
     `).all(count) as PostRow[];
@@ -16,10 +16,10 @@ const randomFeedsModel = {
     const postsWithRelations: julkaisuWithRelations[] = posts.map((post) => {
       const kommentit = db.prepare(`
         SELECT c.*, u.käyttäjäTunnus, u.etunimi, u.sukunimi, u.profile_picture_url
-        FROM comments c
-        JOIN users u ON c.userId = u.id
+        FROM kommentti c
+        JOIN käyttäjä u ON c.userId = u.id
         WHERE c.julkaisuId = ?
-        ORDER BY c.luotu ASC
+        ORDER BY c.createdAt ASC
       `).all(post.id) as (kommentti & {
         käyttäjäTunnus: string;
         etunimi: string;
@@ -28,7 +28,7 @@ const randomFeedsModel = {
       })[];
 
       const tykkäykset = db.prepare(`
-        SELECT * FROM likes WHERE julkaisuId = ?
+        SELECT * FROM tykkäykset WHERE julkaisuId = ?
       `).all(post.id) as tykkäykset[];
 
       const media_images = db.prepare(`
@@ -79,7 +79,7 @@ const randomFeedsModel = {
     if (followedUsernames.length === 0) {
       const stmt = db.prepare(`
         SELECT id, käyttäjäTunnus, etunimi, sukunimi, profile_picture_url
-        FROM users
+        FROM käyttäjä
         WHERE käyttäjäTunnus != ?
         ORDER BY RANDOM()
         LIMIT 5
@@ -89,7 +89,7 @@ const randomFeedsModel = {
 
     const stmt = db.prepare(`
       SELECT id, käyttäjäTunnus, etunimi, sukunimi, profile_picture_url
-      FROM users
+      FROM käyttäjä
       WHERE käyttäjäTunnus != ? AND käyttäjäTunnus NOT IN (${followedUsernames.map(() => '?').join(',')})
       ORDER BY RANDOM()
       LIMIT 5

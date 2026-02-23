@@ -1,20 +1,75 @@
 import type { chatMessages, notifications, userProfile } from '@xcomrade/types-server';
 import type { Conversation } from '../../utilHelpers/types/localTypes';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useReducer } from 'react';
 import { ChatList, ChatWindow } from '../components/Messages&Notifics';
 import { NotificationList } from '../components/Messages&Notifics';
 import { api } from '../../utilHelpers/FetchingData';
 import { useKäyttäjä } from '../content/käyttänKontentti';
 
+// ---- useReducer for MessagesView ----
+type RecipientUser = Pick<userProfile, 'id' | 'käyttäjäTunnus' | 'etunimi' | 'sukunimi' | 'profile_picture_url'>;
+
+interface MessagesState {
+  conversations: Conversation[];
+  selectedUserId: number | null;
+  messages: chatMessages[];
+  recipientUser: RecipientUser | null;
+  isLoading: boolean;
+  isLoadingMessages: boolean;
+  error: string | null;
+}
+
+type MessagesAction =
+  | { type: 'CONVERSATIONS_LOADING' }
+  | { type: 'CONVERSATIONS_LOADED'; payload: Conversation[] }
+  | { type: 'CONVERSATIONS_ERROR'; payload: string }
+  | { type: 'SELECT_CHAT'; payload: number }
+  | { type: 'MESSAGES_LOADING' }
+  | { type: 'MESSAGES_LOADED'; payload: chatMessages[] }
+  | { type: 'MESSAGES_ERROR'; payload: string }
+  | { type: 'SET_RECIPIENT'; payload: RecipientUser }
+  | { type: 'APPEND_MESSAGE'; payload: chatMessages };
+
+const messagesInitialState: MessagesState = {
+  conversations: [],
+  selectedUserId: null,
+  messages: [],
+  recipientUser: null,
+  isLoading: true,
+  isLoadingMessages: false,
+  error: null,
+};
+
+function messagesReducer(state: MessagesState, action: MessagesAction): MessagesState {
+  switch (action.type) {
+    case 'CONVERSATIONS_LOADING':
+      return { ...state, isLoading: true, error: null };
+    case 'CONVERSATIONS_LOADED':
+      return { ...state, isLoading: false, conversations: action.payload };
+    case 'CONVERSATIONS_ERROR':
+      return { ...state, isLoading: false, error: action.payload };
+    case 'SELECT_CHAT':
+      return { ...state, selectedUserId: action.payload, messages: [], recipientUser: null };
+    case 'MESSAGES_LOADING':
+      return { ...state, isLoadingMessages: true };
+    case 'MESSAGES_LOADED':
+      return { ...state, isLoadingMessages: false, messages: action.payload };
+    case 'MESSAGES_ERROR':
+      return { ...state, isLoadingMessages: false, error: action.payload };
+    case 'SET_RECIPIENT':
+      return { ...state, recipientUser: action.payload };
+    case 'APPEND_MESSAGE':
+      return { ...state, messages: [...state.messages, action.payload] };
+    default:
+      return state;
+  }
+}
+
 const MessagesView = () => {
   const { user } = useKäyttäjä();
   const currentUserId = user?.id ?? 0;
-  const [conversations, setConversations] = useState<Conversation[]>([]);
-  const [selectedUserId, setSelectedUserId] = useState<number | null>(null);
-  const [messages, setMessages] = useState<chatMessages[]>([]);
-  const [recipientUser, setRecipientUser] = useState<Pick<userProfile, 'id' | 'käyttäjäTunnus' | 'etunimi' | 'sukunimi' | 'profile_picture_url'> | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
-  const [isLoadingMessages, setIsLoadingMessages] = useState(false);
+  const [state, dispatch] = useReducer(messagesReducer, messagesInitialState);
+  const { conversations, selectedUserId, messages, recipientUser, isLoading, isLoadingMessages } = state;
 
   useEffect(() => {
     loadConversations();
@@ -29,42 +84,40 @@ const MessagesView = () => {
 
   const loadConversations = async () => {
     try {
-      setIsLoading(true);
+      dispatch({ type: 'CONVERSATIONS_LOADING' });
       const convos = await api.message.getConversations();
       // Transform to Conversation interface (assumes getConversations returns proper structure)
-      setConversations(convos as unknown as Conversation[]);
+      dispatch({ type: 'CONVERSATIONS_LOADED', payload: convos as unknown as Conversation[] });
     } catch (err) {
       console.error('Load conversations error:', err);
-    } finally {
-      setIsLoading(false);
+      dispatch({ type: 'CONVERSATIONS_ERROR', payload: 'Failed to load conversations' });
     }
   };
 
   const loadMessages = async (userId: number) => {
     try {
-      setIsLoadingMessages(true);
+      dispatch({ type: 'MESSAGES_LOADING' });
       const msgs = await api.message.getMessages(userId);
-      setMessages(msgs);
+      dispatch({ type: 'MESSAGES_LOADED', payload: msgs });
       // Mark as read
       await api.message.markAsRead(userId);
     } catch (err) {
       console.error('Load messages error:', err);
-    } finally {
-      setIsLoadingMessages(false);
+      dispatch({ type: 'MESSAGES_ERROR', payload: 'Failed to load messages' });
     }
   };
 
   const loadRecipientUser = async (userId: number) => {
     try {
       const user = await api.user.getProfile(userId);
-      setRecipientUser(user);
+      dispatch({ type: 'SET_RECIPIENT', payload: user });
     } catch (err) {
       console.error('Load recipient error:', err);
     }
   };
 
   const handleSelectChat = (userId: number) => {
-    setSelectedUserId(userId);
+    dispatch({ type: 'SELECT_CHAT', payload: userId });
   };
 
   const handleSendMessage = async (message: string) => {
@@ -72,7 +125,7 @@ const MessagesView = () => {
 
     try {
       const newMessage = await api.message.sendMessage(selectedUserId, message);
-      setMessages([...messages, newMessage]);
+      dispatch({ type: 'APPEND_MESSAGE', payload: newMessage });
     } catch (err) {
       console.error('Send message error:', err);
       alert('Failed to send message');
