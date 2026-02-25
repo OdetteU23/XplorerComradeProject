@@ -1,5 +1,4 @@
 #root {
-  max-width: 1280px;
   margin: 0 auto;
   padding: 0;
   text-align: center;
@@ -238,7 +237,6 @@
 }
 
 /* ===== Views ===== */
-.home-view,
 .search-view,
 .explore-view,
 .settings-view {
@@ -246,6 +244,8 @@
   margin: 0 auto;
   text-align: left;
 }
+
+/* HomeView styles now handled by Tailwind classes in HomeView.tsx */
 
 .error-message {
   background: rgba(220, 38, 38, 0.15);

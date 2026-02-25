@@ -32,5 +32,6 @@
     "url": "git+https://github.com/OdetteU23/XplorerComradeProject.git"
   },
   "dependencies": {
+    "react-icons": "^5.5.0"
   }
 }

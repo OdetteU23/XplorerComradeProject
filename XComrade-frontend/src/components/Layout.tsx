@@ -15,9 +15,11 @@ const Layout = () => {
   }
 
   return (
-    <div className="app-layout">
+    <div className="app-layout relative min-h-screen">
+      {/* Global dark gradient overlay */}
+      <div className="fixed inset-0 z-0 bg-gradient-to-b from-black/25 via-[rgba(26,26,46,0.6)] via-40% to-[rgba(26,26,46,0.97)] pointer-events-none" />
       <NavBar />
-      <main className="main-content">
+      <main className="main-content relative z-10">
         <Outlet />
       </main>
       <BottomNav />

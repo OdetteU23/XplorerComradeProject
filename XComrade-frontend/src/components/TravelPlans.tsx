@@ -1,5 +1,6 @@
 import type { matkaAikeet, friendRequest, tripParticipants, userProfile } from '@xcomrade/types-server';
 import { useState } from 'react';
+import { FaCalendarAlt } from "react-icons/fa";
 /*
   - TravelPlanCard --> Single travel plan display (matkaAikeet)
   - TravelPlanList --> List of travel plans
@@ -8,6 +9,22 @@ import { useState } from 'react';
   - ParticipantsList --> Trip participants display (tripParticipants)
   - ActivityChips --> Display list of activities
 */
+
+/** Safely convert a value that may be a JSON string or already an array into a string[] */
+const toArray = (value: unknown): string[] => {
+  if (Array.isArray(value)) return value;
+  if (typeof value === 'string') {
+    try {
+      const parsed = JSON.parse(value);
+      return Array.isArray(parsed) ? parsed : [];
+    } catch {
+      return value.trim() ? [value] : [];
+    }
+  }
+  return [];
+};
+
+const DEFAULT_AVATAR = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ccircle cx='50' cy='50' r='50' fill='%23555'/%3E%3Ccircle cx='50' cy='38' r='18' fill='%23888'/%3E%3Cellipse cx='50' cy='80' rx='30' ry='22' fill='%23888'/%3E%3C/svg%3E";
 
 interface TravelPlanWithUser extends matkaAikeet {
   user?: Pick<userProfile, 'id' | 'käyttäjäTunnus' | 'etunimi' | 'sukunimi' | 'profile_picture_url'>;
@@ -26,7 +43,7 @@ const TravelPlanCard = ({ plan, onRequestJoin, onViewDetails }: TravelPlanCardPr
       {plan.user && (
         <div className="plan-creator">
           <img
-            src={plan.user.profile_picture_url || '/default-avatar.png'}
+            src={plan.user.profile_picture_url || DEFAULT_AVATAR}
             alt={plan.user.käyttäjäTunnus}
           />
           <span>{plan.user.etunimi} {plan.user.sukunimi}</span>
@@ -36,17 +53,20 @@ const TravelPlanCard = ({ plan, onRequestJoin, onViewDetails }: TravelPlanCardPr
       <div className="plan-content">
         <h3>🌍 {plan.kohde}</h3>
         <p className="plan-dates">
-          📅 {new Date(plan.suunniteltu_alku_pvm).toLocaleDateString()} - {new Date(plan.suunniteltu_loppu_pvm).toLocaleDateString()}
+          <FaCalendarAlt /> {new Date(plan.suunniteltu_alku_pvm).toLocaleDateString()} - {new Date(plan.suunniteltu_loppu_pvm).toLocaleDateString()}
         </p>
         {plan.kuvaus && <p className="plan-description">{plan.kuvaus}</p>}
 
-        <ActivityChips activities={plan.aktiviteetit} />
+        <ActivityChips activities={toArray(plan.aktiviteetit)} />
 
-        {plan.budjetti && plan.budjetti.length > 0 && (
-          <div className="plan-budget">
-            <strong>Budget:</strong> {plan.budjetti.join(', ')}
-          </div>
-        )}
+        {(() => {
+          const budgetArr = toArray(plan.budjetti);
+          return budgetArr.length > 0 ? (
+            <div className="plan-budget">
+              <strong>Budget:</strong> {budgetArr.join(', ')}
+            </div>
+          ) : null;
+        })()}
 
         {plan.participantsCount !== undefined && (
           <p className="participants-count">👥 {plan.participantsCount} participant(s)</p>
@@ -211,7 +231,7 @@ const BuddyRequestCard = ({ request, onAccept, onReject }: BuddyRequestCardProps
   return (
     <div className="buddy-request-card">
       <img
-        src={request.requester.profile_picture_url || '/default-avatar.png'}
+        src={request.requester.profile_picture_url || DEFAULT_AVATAR}
         alt={request.requester.käyttäjäTunnus}
       />
       <div className="request-content">
@@ -248,7 +268,7 @@ const ParticipantsList = ({ participants }: ParticipantsListProps) => {
         {participants.map((participant) => (
           <div key={participant.id} className="participant-item">
             <img
-              src={participant.user.profile_picture_url || '/default-avatar.png'}
+              src={participant.user.profile_picture_url || DEFAULT_AVATAR}
               alt={participant.user.käyttäjäTunnus}
             />
             <div className="participant-info">

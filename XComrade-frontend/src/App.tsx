@@ -14,15 +14,25 @@ const App = () => {
     <BrowserRouter basename="/XplorerComrade">
       <PääKäyttäjäProvider>
         <Routes>
-          {/* Public routes */}
+          {/* Public routes (with gradient overlay) */}
           <Route path="/login" element={
             <PublicRoute>
-              <LoginView />
+              <div className="relative min-h-screen">
+                <div className="fixed inset-0 z-0 bg-gradient-to-b from-black/25 via-[rgba(26,26,46,0.6)] via-40% to-[rgba(26,26,46,0.97)] pointer-events-none" />
+                <div className="relative z-10">
+                  <LoginView />
+                </div>
+              </div>
             </PublicRoute>
           } />
           <Route path="/register" element={
             <PublicRoute>
-              <RegisterView />
+              <div className="relative min-h-screen">
+                <div className="fixed inset-0 z-0 bg-gradient-to-b from-black/25 via-[rgba(26,26,46,0.6)] via-40% to-[rgba(26,26,46,0.97)] pointer-events-none" />
+                <div className="relative z-10">
+                  <RegisterView />
+                </div>
+              </div>
             </PublicRoute>
           } />
 

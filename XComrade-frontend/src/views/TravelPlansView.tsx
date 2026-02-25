@@ -4,6 +4,24 @@ import { useState, useEffect } from 'react';
 import { TravelPlanList, TravelPlanForm, ParticipantsList, BuddyRequestCard } from '../components/TravelPlans';
 import { SearchBar, FilterBar } from '../components/Forms';
 import { api } from '../../utilHelpers/FetchingData';
+import { GiWorld } from "react-icons/gi";
+import { FaCalendarAlt } from 'react-icons/fa';
+
+/** Safely convert a value that may be a JSON string or already an array into a string[] */
+const toArray = (value: unknown): string[] => {
+  if (Array.isArray(value)) return value;
+  if (typeof value === 'string') {
+    try {
+      const parsed = JSON.parse(value);
+      return Array.isArray(parsed) ? parsed : [];
+    } catch {
+      return value.trim() ? [value] : [];
+    }
+  }
+  return [];
+};
+
+const DEFAULT_AVATAR = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ccircle cx='50' cy='50' r='50' fill='%23555'/%3E%3Ccircle cx='50' cy='38' r='18' fill='%23888'/%3E%3Cellipse cx='50' cy='80' rx='30' ry='22' fill='%23888'/%3E%3C/svg%3E";
 
 const TravelPlansView = () => {
   const [travelPlans, setTravelPlans] = useState<TravelPlanWithUser[]>([]);
@@ -77,7 +95,7 @@ const TravelPlansView = () => {
   return (
     <div className="travel-plans-view">
       <div className="travel-plans-header">
-        <h2>Discover Travel Plans 🗺️</h2>
+        <h2>Discover Travel Plans <GiWorld /></h2>
         <button
           onClick={() => setShowCreateForm(!showCreateForm)}
           className="create-plan-btn"
@@ -212,16 +230,16 @@ const TravelPlanDetailView = () => {
       </button>
 
       <div className="plan-detail-header">
-        <h1>🌍 {plan.kohde}</h1>
+        <h1><GiWorld /> {plan.kohde}</h1>
         <div className="plan-dates">
-          📅 {new Date(plan.suunniteltu_alku_pvm).toLocaleDateString()} - {new Date(plan.suunniteltu_loppu_pvm).toLocaleDateString()}
+          <FaCalendarAlt /> {new Date(plan.suunniteltu_alku_pvm).toLocaleDateString()} - {new Date(plan.suunniteltu_loppu_pvm).toLocaleDateString()}
         </div>
       </div>
 
       {plan.user && (
         <div className="plan-creator-info">
           <img
-            src={plan.user.profile_picture_url || '/default-avatar.png'}
+            src={plan.user.profile_picture_url || DEFAULT_AVATAR}
             alt={plan.user.käyttäjäTunnus}
           />
           <div>
@@ -239,18 +257,21 @@ const TravelPlanDetailView = () => {
       <div className="plan-activities">
         <h3>Activities</h3>
         <div className="activity-chips">
-          {plan.aktiviteetit.map((activity, index) => (
+          {toArray(plan.aktiviteetit).map((activity, index) => (
             <span key={index} className="activity-chip">{activity}</span>
           ))}
         </div>
       </div>
 
-      {plan.budjetti && plan.budjetti.length > 0 && (
-        <div className="plan-budget">
-          <h3>Budget</h3>
-          <p>{plan.budjetti.join(', ')}</p>
-        </div>
-      )}
+      {(() => {
+        const budgetArr = toArray(plan.budjetti);
+        return budgetArr.length > 0 ? (
+          <div className="plan-budget">
+            <h3>Budget</h3>
+            <p>{budgetArr.join(', ')}</p>
+          </div>
+        ) : null;
+      })()}
 
       <ParticipantsList participants={participants} />
 

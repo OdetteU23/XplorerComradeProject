@@ -6,6 +6,10 @@ import { UserList } from '../components/Profile';
 import PublicViewPrompt from '../components/publicViewPromp';
 import { useKäyttäjä } from '../content/käyttänKontentti';
 import { api } from '../../utilHelpers/FetchingData';
+import { GiWorld } from 'react-icons/gi';
+import { IoIosWarning } from 'react-icons/io';
+import { FaFire, FaStar } from 'react-icons/fa6';
+import { FaMapMarkerAlt } from 'react-icons/fa';
 
 // ---- useReducer for HomeView ----
 interface HomeState {
@@ -150,59 +154,94 @@ const HomeView = () => {
 
   if (isLoading) {
     return (
-      <div className="home-layout">
-        <p>Loading feed...</p>
+      <div className="flex flex-col items-center justify-center min-h-[60vh] gap-4 text-gray-400">
+        <div className="w-9 h-9 border-3 border-white/10 border-t-indigo-600 rounded-full animate-spin" />
+        <p>Loading your feed...</p>
       </div>
     );
   }
 
   return (
-    <div className="home-layout">
-
-      {error && <div className="error-alert"><p>⚠️ {error}</p></div>}
-
-      {/* LEFT: Main feed from followed users */}
-      <div className="main-feed">
-        {visiblePosts.length === 0 ? (
-          <p>You are not following anyone yet. Discover users on the right!</p>
-        ) : (
-          <FeedList
-            posts={visiblePosts}
-            onLike={handleLike}
-            onComment={handleComment}
-          />
-        )}
-        {!isAuthenticated && posts.length > GUEST_CONTENT_LIMIT && (
-          <PublicViewPrompt message="Sign in to see more travel posts from people you follow!" />
+    <div>
+      {/* Hero text over background */}
+      <div className="max-w-7xl mx-auto w-full px-8 pt-16 pb-8 text-white">
+        <h1 className="text-5xl font-extrabold mb-2 tracking-tight drop-shadow-[0_2px_16px_rgba(0,0,0,0.5)]">
+          Explore the World
+        </h1>
+        <p className="text-lg max-w-lg text-white/90 mb-6 drop-shadow-[0_1px_10px_rgba(0,0,0,0.4)]">
+          Discover breathtaking destinations, share your journeys, and connect with fellow travelers.
+        </p>
+        {!isAuthenticated && (
+          <div className="flex gap-3">
+            <a href="/register" className="px-6 py-2.5 rounded-full text-sm font-semibold bg-indigo-600 text-white no-underline hover:bg-indigo-700 hover:-translate-y-0.5 hover:shadow-lg transition-all">
+              Get Started
+            </a>
+            <a href="/login" className="px-6 py-2.5 rounded-full text-sm font-semibold text-white no-underline bg-white/15 backdrop-blur-sm border border-white/25 hover:bg-white/25 hover:-translate-y-0.5 hover:shadow-lg transition-all">
+              Sign In
+            </a>
+          </div>
         )}
       </div>
 
-      {/* RIGHT: Discovery sidebar */}
-      <div className="discover-sidebar">
+      {error && (
+        <div className="max-w-7xl mx-auto px-4">
+          <div className="bg-red-600/15 border border-red-600/30 rounded-lg p-4 text-center mb-4">
+            <p><IoIosWarning /> {error}</p>
+          </div>
+        </div>
+      )}
 
-        {/* Suggested users to follow */}
-        <section>
-          <h3>People you might like</h3>
-          <UserList
-            users={visibleSuggestedUsers}
-            title="Suggested Users"
-            emptyMessage="No suggestions available."
-          />
-        </section>
+      {/* Content grid */}
+      <div className="grid grid-cols-1 lg:grid-cols-[1fr_380px] gap-8 max-w-7xl mx-auto px-4 pb-8">
 
-        {/* Random posts from unfollowed users */}
-        <section>
-          <h3>Explore posts</h3>
-          <FeedList
-            posts={visibleRandomPosts}
-            onLike={handleLike}
-            onComment={handleComment}
-          />
-          {!isAuthenticated && randomPosts.length > GUEST_CONTENT_LIMIT && (
-            <PublicViewPrompt message="Sign in to discover more travel experiences!" />
+        {/* LEFT: Main feed from followed users */}
+        <div>
+          <h2 className="text-xl font-bold text-white mb-4">Your Feed</h2>
+          {visiblePosts.length === 0 ? (
+            <div className="text-center py-12 px-8 bg-white/[0.04] border border-dashed border-white/15 rounded-2xl">
+              <span className="text-5xl block mb-3"><GiWorld /></span>
+              <h3 className="text-lg font-semibold text-white mb-2">Your feed is empty</h3>
+              <p className="text-white/60 text-sm max-w-xs mx-auto">You are not following anyone yet. Discover travelers on the right and start following!</p>
+            </div>
+          ) : (
+            <FeedList
+              posts={visiblePosts}
+              onLike={handleLike}
+              onComment={handleComment}
+            />
           )}
-        </section>
+          {!isAuthenticated && posts.length > GUEST_CONTENT_LIMIT && (
+            <PublicViewPrompt message="Sign in to see more travel posts from people you follow!" />
+          )}
+        </div>
 
+        {/* RIGHT: Discovery sidebar */}
+        <div className="flex flex-col gap-6">
+
+          {/* Suggested users to follow */}
+          <section className="bg-white/5 border border-white/[0.08] rounded-2xl p-5 backdrop-blur-sm">
+            <h3 className="text-base font-bold text-white/90 mb-4">People you might like</h3>
+            <UserList
+              users={visibleSuggestedUsers}
+              title="Suggested Users"
+              emptyMessage="No suggestions available."
+            />
+          </section>
+
+          {/* Random posts from unfollowed users */}
+          <section className="bg-white/5 border border-white/[0.08] rounded-2xl p-5 backdrop-blur-sm">
+            <h3 className="text-base font-bold text-white/90 mb-4">Explore posts</h3>
+            <FeedList
+              posts={visibleRandomPosts}
+              onLike={handleLike}
+              onComment={handleComment}
+            />
+            {!isAuthenticated && randomPosts.length > GUEST_CONTENT_LIMIT && (
+              <PublicViewPrompt message="Sign in to discover more travel experiences!" />
+            )}
+          </section>
+
+        </div>
       </div>
     </div>
   );
@@ -341,14 +380,14 @@ const ExploreView = () => {
       ) : (
         <>
           <section className="popular-destinations">
-            <h3>🔥 Popular Destinations</h3>
+            <h3><FaFire /> Popular Destinations</h3>
             {visibleDestinations.length === 0 ? (
               <p>No trending destinations at the moment.</p>
             ) : (
               <div className="destination-chips">
                 {visibleDestinations.map((destination, index) => (
                   <span key={index} className="destination-chip">
-                    📍 {destination}
+                    <FaMapMarkerAlt /> {destination}
                   </span>
                 ))}
               </div>
@@ -356,7 +395,7 @@ const ExploreView = () => {
           </section>
 
           <section className="trending-posts">
-            <h3>⭐ Trending Travel Experiences</h3>
+            <h3><FaStar /> Trending Travel Experiences</h3>
             {visibleTrendingPosts.length === 0 ? (
               <p>No trending posts at the moment.</p>
             ) : (
@@ -412,6 +451,7 @@ const SettingsView = () => {
   };
 
   const handleUpdateProfile = async (updates: Partial<userProfile>) => {
+
     if (!userProfile) return;
 
     try {
@@ -428,6 +468,7 @@ const SettingsView = () => {
   return (
     <div className="settings-view">
       <h2>Account Settings</h2>
+              {/* TODO: Implement the profile update functionality */ }
 
       <section className="profile-settings">
         <h3>Profile Information</h3>
@@ -440,15 +481,25 @@ const SettingsView = () => {
               <p>@{userProfile.käyttäjäTunnus}</p>
             </div>
             <div className="form-group">
-              <label>Name</label>
+              <label>Username
+                <button onClick={() => handleUpdateProfile({
+                })}>Change username</button>
+              </label>
               <p>{userProfile.etunimi} {userProfile.sukunimi}</p>
             </div>
             <div className="form-group">
-              <label>Email</label>
+              <label>Email
+                 <button onClick={() => handleUpdateProfile({
+                 })}>Change Email</button>
+              </label>
               <p>{userProfile.sahkoposti}</p>
             </div>
             <div className="form-group">
-              <label>Location</label>
+              <label>Location
+                 <button onClick={() => setIsEditing(!isEditing)}>
+              {isEditing ? 'Cancel' : 'Edit location'}
+            </button>
+              </label>
               <p>{userProfile.location || 'Not specified'}</p>
             </div>
             <div className="form-group">
@@ -466,7 +517,7 @@ const SettingsView = () => {
 
       <section className="account-settings">
         <h3>Privacy & Security</h3>
-        <button>Change Password</button>
+        <button onClick={() => handleUpdateProfile({})}>Change Password</button>
         <button>Privacy Settings</button>
       </section>
 

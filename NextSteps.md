@@ -1,5 +1,5 @@
 # Next steps:
-- Adding a picture on home page view
+- Adding a picture on home page view ---> Done
 - Reimplementing homepage view with a much better view
 - Updating the profile view --> To add more logics there
 - Fixing the plans view: 
