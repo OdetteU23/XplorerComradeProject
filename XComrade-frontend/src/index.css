@@ -14,10 +14,14 @@
   -moz-osx-font-smoothing: grayscale;
 }
 
+body {
+  margin: 0;
+  background: url('/ui/xcomradeHomeViewPic.jpg') top center / 100% auto no-repeat fixed #1a1a2e;
+}
+
 #root {
-  max-width: 1280px;
   margin: 0 auto;
-  padding: 2rem;
+  padding: 0;
 }
 
 /* nav */
@@ -205,9 +209,10 @@ button:focus-visible {
 */
 
 
-/*
 @import 'tailwindcss';
 @import "tw-animate-css";
+
+/*
 @import "shadcn/tailwind.css";
 
 @custom-variant dark (&:is(.dark *));

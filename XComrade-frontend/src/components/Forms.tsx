@@ -1,5 +1,6 @@
 import { loginInfo, registeringInfo } from '@xcomrade/types-server';
 import { useState } from 'react';
+import { CiSearch } from "react-icons/ci";
 
 /* Form Components:
 - LoginForm --> Login form (loginInfo)
@@ -181,7 +182,7 @@ const SearchBar = ({ onSearch, placeholder = 'Search...' }: SearchBarProps) => {
         onChange={(e) => setQuery(e.target.value)}
         placeholder={placeholder}
       />
-      <button type="submit">🔍</button>
+      <button type="submit"> <CiSearch/> </button>
     </form>
   );
 };

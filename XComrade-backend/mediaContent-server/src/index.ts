@@ -1,6 +1,7 @@
 import express, { Request, Response, Application } from 'express';
 import cors from 'cors';
 import mediaContentRoutes from './api/routes/mediaContentRoutes';
+import randomFeedsRoutes from './api/routes/randomFeedsRoutes';
 import './database/db-manipulation'; // Initialize database
 
 const app: Application = express();
@@ -23,7 +24,9 @@ app.get('/', (_req: Request, res: Response) => {
   });
 });
 
-// API Routes for media content management
+// API Routes - randomFeedsRoutes MUST be before mediaContentRoutes
+// so /posts/random matches before /posts/:id
+app.use('/api', randomFeedsRoutes);
 app.use('/api', mediaContentRoutes);
 
 // Error handling middleware

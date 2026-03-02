@@ -1,2 +1,0 @@
-# @xplorercomrade/frontend-server dev
-

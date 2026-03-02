@@ -1,5 +1,8 @@
-import type { userProfile, seuranta } from '@xcomrade/types-server';
+import type { userProfile, seuranta, UserSearchResult } from '@xcomrade/types-server';
 import { useState } from 'react';
+import { GrLocationPin } from 'react-icons/gr';
+
+const DEFAULT_AVATAR = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='40' height='40' viewBox='0 0 24 24' fill='%239ca3af'%3E%3Cpath d='M12 12c2.7 0 4.8-2.1 4.8-4.8S14.7 2.4 12 2.4 7.2 4.5 7.2 7.2 9.3 12 12 12zm0 2.4c-3.2 0-9.6 1.6-9.6 4.8v2.4h19.2v-2.4c0-3.2-6.4-4.8-9.6-4.8z'/%3E%3C/svg%3E";
 
 /*
   - UserCard --> User profile summary card
@@ -22,19 +25,19 @@ interface UserCardProps {
 
 const UserCard = ({ user, stats, onUserClick }: UserCardProps) => {
   return (
-    <div className="user-card" onClick={() => onUserClick?.(user.id)}>
+    <div className="flex flex-col items-center text-center gap-2 p-4 rounded-xl bg-white/5 hover:bg-white/10 transition cursor-pointer" onClick={() => onUserClick?.(user.id)}>
       <img
-        src={user.profile_picture_url || '/default-avatar.png'}
+        src={user.profile_picture_url || DEFAULT_AVATAR}
         alt={user.käyttäjäTunnus}
-        className="user-card-avatar"
+        className="h-14 w-14 rounded-full object-cover border-2 border-white/20"
       />
-      <div className="user-card-info">
-        <h4>{user.etunimi} {user.sukunimi}</h4>
-        <p className="username">@{user.käyttäjäTunnus}</p>
-        {user.location && <p className="location">📍 {user.location}</p>}
-        {user.bio && <p className="bio">{user.bio}</p>}
+      <div>
+        <h4 className="text-sm font-semibold text-white">{user.etunimi} {user.sukunimi}</h4>
+        <p className="text-xs text-white/60">@{user.käyttäjäTunnus}</p>
+        {user.location && <p className="text-xs text-white/50 flex items-center justify-center gap-1 mt-1"><GrLocationPin className="text-[10px]" /> {user.location}</p>}
+        {user.bio && <p className="text-xs text-white/40 mt-1 line-clamp-2">{user.bio}</p>}
         {stats && (
-          <div className="user-stats">
+          <div className="flex gap-3 justify-center mt-2 text-xs text-white/50">
             <span>{stats.postsCount} posts</span>
             <span>{stats.followersCount} followers</span>
             <span>{stats.followingCount} following</span>
@@ -63,38 +66,38 @@ const ProfileHeader = ({
   onFollowToggle
 }: ProfileHeaderProps) => {
   return (
-    <div className="profile-header">
-      <div className="profile-cover"></div>
-      <div className="profile-info">
+    <div className="rounded-2xl bg-white/5 border border-white/10 overflow-hidden">
+      <div className="h-28 bg-gradient-to-r from-indigo-600/30 to-purple-600/30"></div>
+      <div className="flex flex-col items-center -mt-12 pb-6 px-6">
         <img
-          src={user.profile_picture_url || '/default-avatar.png'}
+          src={user.profile_picture_url || DEFAULT_AVATAR}
           alt={user.käyttäjäTunnus}
-          className="profile-avatar"
+          className="h-24 w-24 rounded-full object-cover border-4 border-stone-800"
         />
-        <div className="profile-details">
-          <h1>{user.etunimi} {user.sukunimi}</h1>
-          <p className="username">@{user.käyttäjäTunnus}</p>
-          {user.location && <p className="location">📍 {user.location}</p>}
-          {user.bio && <p className="bio">{user.bio}</p>}
+        <div className="text-center mt-3">
+          <h1 className="text-xl font-bold text-white">{user.etunimi} {user.sukunimi}</h1>
+          <p className="text-sm text-white/60">@{user.käyttäjäTunnus}</p>
+          {user.location && <p className="text-sm text-white/50 flex items-center justify-center gap-1 mt-1"><GrLocationPin className="text-xs" /> {user.location}</p>}
+          {user.bio && <p className="text-sm text-white/40 mt-2 max-w-md">{user.bio}</p>}
 
-          <div className="profile-stats">
-            <div className="stat">
-              <strong>{stats.postsCount}</strong>
-              <span>Posts</span>
+          <div className="flex gap-8 justify-center mt-4">
+            <div className="text-center">
+              <strong className="text-white text-lg">{stats.postsCount}</strong>
+              <span className="block text-xs text-white/50">Posts</span>
             </div>
-            <div className="stat">
-              <strong>{stats.followersCount}</strong>
-              <span>Followers</span>
+            <div className="text-center">
+              <strong className="text-white text-lg">{stats.followersCount}</strong>
+              <span className="block text-xs text-white/50">Followers</span>
             </div>
-            <div className="stat">
-              <strong>{stats.followingCount}</strong>
-              <span>Following</span>
+            <div className="text-center">
+              <strong className="text-white text-lg">{stats.followingCount}</strong>
+              <span className="block text-xs text-white/50">Following</span>
             </div>
           </div>
 
-          <div className="profile-actions">
+          <div className="mt-4">
             {isOwnProfile ? (
-              <button onClick={onEditProfile}>Edit Profile</button>
+              <button className="px-5 py-1.5 rounded-full text-sm font-semibold bg-white/10 text-white border border-white/20 hover:bg-white/20 transition" onClick={onEditProfile}>Edit Profile</button>
             ) : (
               <FollowButton
                 isFollowing={isFollowing || false}
@@ -125,11 +128,16 @@ const FollowButton = ({ isFollowing, onToggle }: FollowButtonProps) => {
 };
 
 interface UserListProps {
-  users: userProfile[];
+  users: (userProfile | UserSearchResult)[];
   title?: string;
   onUserClick?: (userId: number) => void;
   emptyMessage?: string;
 }
+
+// Type guard to check if a user object has stats (UserSearchResult)
+const hasStats = (user: userProfile | UserSearchResult): user is UserSearchResult => {
+  return 'postsCount' in user && 'followersCount' in user;
+};
 
 const UserList = ({
   users,
@@ -138,23 +146,33 @@ const UserList = ({
   emptyMessage = 'No users found'
 }: UserListProps) => {
   return (
-    <div className="user-list">
-      {title && <h3>{title}</h3>}
+    <div>
+      {title && <h3 className="text-sm font-semibold text-white/70 mb-3">{title}</h3>}
       {users.length === 0 ? (
-        <p className="empty-message">{emptyMessage}</p>
+        <p className="text-sm text-white/40 text-center py-4">{emptyMessage}</p>
       ) : (
-        <div className="users-container">
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3">
           {users.map((user) => (
-            <div key={user.id} className="user-list-item">
+            <div
+              key={user.id}
+              className="flex flex-col items-center text-center gap-2 p-3 rounded-xl bg-white/5 hover:bg-white/10 transition cursor-pointer"
+              onClick={() => onUserClick?.(user.id)}
+            >
               <img
-                src={user.profile_picture_url || '/default-avatar.png'}
+                src={user.profile_picture_url || DEFAULT_AVATAR}
                 alt={user.käyttäjäTunnus}
-                className="user-list-avatar"
+                className="h-12 w-12 rounded-full object-cover border-2 border-white/20"
               />
-              <div className="user-list-info" onClick={() => onUserClick?.(user.id)}>
-                <h4>{user.etunimi} {user.sukunimi}</h4>
-                <p className="username">@{user.käyttäjäTunnus}</p>
-                {user.location && <p className="location">📍 {user.location}</p>}
+              <div>
+                <h4 className="text-sm font-semibold text-white">{user.etunimi} {user.sukunimi}</h4>
+                <p className="text-xs text-white/60">@{user.käyttäjäTunnus}</p>
+                {user.location && <p className="text-xs text-white/50 mt-0.5">📍 {user.location}</p>}
+                {hasStats(user) && (
+                  <div className="flex flex-wrap gap-2 justify-center mt-1 text-[10px] text-white/40">
+                    <span>{user.postsCount} posts</span>
+                    <span>{user.followersCount} followers</span>
+                  </div>
+                )}
               </div>
             </div>
           ))}

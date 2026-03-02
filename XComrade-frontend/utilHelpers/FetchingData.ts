@@ -2,6 +2,7 @@
 import type {userProfile, loginInfo,
   registeringInfo, julkaisu, julkaisuWithRelations, matkaAikeet, kommentti, tykkäykset, seuranta, chatMessages,
   notifications, friendRequest, tripParticipants, MessageResponse, ErrorResponse, BooleanResponse,
+  UserSearchResult, UserProfileWithStats,
 } from '@xcomrade/types-server';
 
 // API Base URLs - Update these to match your backend servers
@@ -96,39 +97,31 @@ export const authAPI = {
 // Keep these functions for future implementation
 
 export const userAPI = {
-  // Get user profile by ID
-  getProfile: async (userId: number): Promise<userProfile> => {
-    // TODO: Implement in backend
-    console.warn('User profile endpoint not implemented');
-    return fetchAPI<userProfile>(MEDIA_API, `/users/${userId}`);
+  // Get user profile by ID (public, optionalAuth for follow status)
+  getProfile: async (userId: number): Promise<UserProfileWithStats> => {
+    return fetchAPI<UserProfileWithStats>(AUTH_API, `/users/${userId}`);
   },
 
-  // Update user profile
+  // Update user profile (auth required, own profile only)
   updateProfile: async (userId: number, data: Partial<userProfile>): Promise<userProfile> => {
-    // TODO: Implement in backend
-    console.warn('Update profile endpoint not implemented');
-    return fetchAPI<userProfile>(MEDIA_API, `/users/${userId}`, {
+    return fetchAPI<userProfile>(AUTH_API, `/users/${userId}`, {
       method: 'PUT',
       body: JSON.stringify(data),
     });
   },
 
-  // Get user stats
+  // Get user stats (public)
   getUserStats: async (userId: number): Promise<{
     postsCount: number;
     followersCount: number;
     followingCount: number;
   }> => {
-    // TODO: Implement in backend
-    console.warn('User stats endpoint not implemented');
-    return fetchAPI(MEDIA_API, `/users/${userId}/stats`);
+    return fetchAPI(AUTH_API, `/users/${userId}/stats`);
   },
 
-  // Search users
-  searchUsers: async (query: string): Promise<userProfile[]> => {
-    // TODO: Implement in backend
-    console.warn('Search users endpoint not implemented');
-    return fetchAPI<userProfile[]>(MEDIA_API, `/users/search?q=${encodeURIComponent(query)}`);
+  // Search users (auth required — only registered users can search)
+  searchUsers: async (query: string): Promise<UserSearchResult[]> => {
+    return fetchAPI<UserSearchResult[]>(AUTH_API, `/users/search?q=${encodeURIComponent(query)}`);
   },
 };
 
@@ -236,43 +229,33 @@ export const commentAPI = {
 // Keep these functions for future implementation
 
 export const followAPI = {
-  // Follow a user
+  // Follow a user (auth required)
   followUser: async (userId: number): Promise<seuranta> => {
-    // TODO: Implement in backend
-    console.warn('Follow user endpoint not implemented');
-    return fetchAPI<seuranta>(MEDIA_API, `/users/${userId}/follow`, {
+    return fetchAPI<seuranta>(AUTH_API, `/users/${userId}/follow`, {
       method: 'POST',
     });
   },
 
-  // Unfollow a user
+  // Unfollow a user (auth required)
   unfollowUser: async (userId: number): Promise<MessageResponse> => {
-    // TODO: Implement in backend
-    console.warn('Unfollow user endpoint not implemented');
-    return fetchAPI<MessageResponse>(MEDIA_API, `/users/${userId}/follow`, {
+    return fetchAPI<MessageResponse>(AUTH_API, `/users/${userId}/follow`, {
       method: 'DELETE',
     });
   },
 
-  // Get followers
+  // Get followers (public)
   getFollowers: async (userId: number): Promise<userProfile[]> => {
-    // TODO: Implement in backend
-    console.warn('Get followers endpoint not implemented');
-    return fetchAPI<userProfile[]>(MEDIA_API, `/users/${userId}/followers`);
+    return fetchAPI<userProfile[]>(AUTH_API, `/users/${userId}/followers`);
   },
 
-  // Get following
+  // Get following (public)
   getFollowing: async (userId: number): Promise<userProfile[]> => {
-    // TODO: Implement in backend
-    console.warn('Get following endpoint not implemented');
-    return fetchAPI<userProfile[]>(MEDIA_API, `/users/${userId}/following`);
+    return fetchAPI<userProfile[]>(AUTH_API, `/users/${userId}/following`);
   },
 
-  // Check if following
+  // Check if following (auth required)
   isFollowing: async (userId: number): Promise<BooleanResponse> => {
-    // TODO: Implement in backend
-    console.warn('Is following endpoint not implemented');
-    return fetchAPI<BooleanResponse>(MEDIA_API, `/users/${userId}/follow/status`);
+    return fetchAPI<BooleanResponse>(AUTH_API, `/users/${userId}/follow/status`);
   },
 };
 
@@ -323,7 +306,24 @@ export const travelPlanAPI = {
   },
 };
 
-// ==================== BUDDY REQUESTS ====================
+//Random posts from different users
+const randomPostAPI = {
+  // Get random posts
+  getRandomPosts: async (count: number = 10): Promise<julkaisuWithRelations[]> => {
+    return fetchAPI<julkaisuWithRelations[]>(MEDIA_API, `/posts/random?count=${count}`);
+  },
+  //Todo: Implementing random posts ENDPOINTS in backend
+};
+const randomUserAPI = {
+  // Get random users
+  getRandomUsers: async (count: number = 10): Promise<userProfile[]> => {
+    return fetchAPI<userProfile[]>(MEDIA_API, `/users/random?count=${count}`);
+  },
+  //Todo: Implementing random users ENDPOINTS in backend
+};
+
+
+//  BUDDY REQUESTS
 
 export const buddyRequestAPI = {
   // Get all buddy requests
@@ -489,7 +489,7 @@ export const mediaAPI = {
   },
 };
 
-// Export all APIs as a single object for convenience
+// Exporting all APIs as a single object for convenience
 export const api = {
   auth: authAPI,
   user: userAPI,
@@ -503,6 +503,8 @@ export const api = {
   message: messageAPI,
   notification: notificationAPI,
   media: mediaAPI,
+  randomPost: randomPostAPI,
+  randomUser: randomUserAPI,
 };
 
 export default api;

@@ -1,6 +1,7 @@
 import db from '../../database/db-manipulation';
 import type {
   julkaisu,
+  julkaisuWithRelations,
   kommentti,
   tykkäykset,
   matkaAikeet,
@@ -8,18 +9,54 @@ import type {
   notifications,
   chatMessages,
   friendRequest,
-  tripParticipants
+  tripParticipants,
+  media_images
 } from '@xcomrade/types-server';
 import type { RunResult } from 'better-sqlite3';
 
+// Helper: enrich a raw julkaisu with user, kommentit, tykkäykset, media_images
+function enrichPost(post: julkaisu): julkaisuWithRelations {
+  const user = db.prepare(`
+    SELECT id, käyttäjäTunnus, etunimi, sukunimi, profile_picture_url
+    FROM käyttäjä WHERE id = ?
+  `).get(post.userId) as { id: number; käyttäjäTunnus: string; etunimi: string; sukunimi: string; profile_picture_url: string } | undefined;
+
+  const kommentit = db.prepare(`
+    SELECT c.*, u.käyttäjäTunnus, u.profile_picture_url
+    FROM kommentti c
+    JOIN käyttäjä u ON c.userId = u.id
+    WHERE c.julkaisuId = ?
+    ORDER BY c.createdAt ASC
+  `).all(post.id) as (kommentti & { käyttäjäTunnus: string; profile_picture_url: string })[];
+
+  const tykkäyksetList = db.prepare(`
+    SELECT * FROM tykkäykset WHERE julkaisuId = ?
+  `).all(post.id) as tykkäykset[];
+
+  const mediaImages = db.prepare(`
+    SELECT id, julkaisuId, url AS image_url FROM media_images WHERE julkaisuId = ?
+  `).all(post.id) as media_images[];
+
+  return {
+    ...post,
+    user: user || { id: post.userId, käyttäjäTunnus: 'unknown', etunimi: '', sukunimi: '', profile_picture_url: '' },
+    kommentit: kommentit.map(c => ({
+      ...c,
+      user: { id: c.userId, käyttäjäTunnus: c.käyttäjäTunnus, profile_picture_url: c.profile_picture_url },
+    })),
+    tykkäykset: tykkäyksetList,
+    media_images: mediaImages,
+  } as unknown as julkaisuWithRelations;
+}
+
 const postContentsModel = {
   //  julkaisut (posts)
-  createNewPost: (kuvaus: string, kohde: string, userId: number, list_aktiviteetti?: string): RunResult => {
+  createNewPost: (kuvaus: string, kohde: string, userId: number, list_aktiviteetti?: string, otsikko?: string, media_type?: string, media_url?: string, sisältö?: string): RunResult => {
     const stmt = db.prepare(`
-      INSERT INTO julkaisu (userId, kuvaus, kohde, list_aktiviteetti, Date_ajakohta)
-      VALUES (?, ?, ?, ?, datetime('now'))
+      INSERT INTO julkaisu (userId, kuvaus, kohde, list_aktiviteetti, Date_ajakohta, otsikko, media_type, media_url, sisältö)
+      VALUES (?, ?, ?, ?, datetime('now'), ?, ?, ?, ?)
     `);
-    const result = stmt.run(userId, kuvaus, kohde, list_aktiviteetti || '[]');
+    const result = stmt.run(userId, kuvaus, kohde, list_aktiviteetti || '[]', otsikko || null, media_type || null, media_url || null, sisältö || null);
     return result;
   },
 
@@ -50,6 +87,22 @@ const postContentsModel = {
     `);
     const result = stmt.all(userId) as julkaisu[];
     return result;
+  },
+
+  // Enriched versions returning julkaisuWithRelations
+  getPostsEnriched: (limit: number = 20, offset: number = 0): julkaisuWithRelations[] => {
+    const posts = postContentsModel.getPosts(limit, offset);
+    return posts.map(enrichPost);
+  },
+
+  getPostByIdEnriched: (julkaisuId: number): julkaisuWithRelations | undefined => {
+    const post = postContentsModel.getPostById(julkaisuId);
+    return post ? enrichPost(post) : undefined;
+  },
+
+  getUserPostsEnriched: (userId: number): julkaisuWithRelations[] => {
+    const posts = postContentsModel.getUserPosts(userId);
+    return posts.map(enrichPost);
   },
 
   updatePost: (julkaisuId: number, kuvaus?: string, kohde?: string, list_aktiviteetti?: string): RunResult | null => {
@@ -200,13 +253,32 @@ const postContentsModel = {
     return result;
   },
 
-  getTravelPlans: (): matkaAikeet[] => {
+  getTravelPlans: (): (matkaAikeet & { user?: { id: number; käyttäjäTunnus: string; etunimi: string; sukunimi: string; profile_picture_url: string } })[] => {
     const stmt = db.prepare(`
-      SELECT * FROM matkaAikeet
-      ORDER BY suunniteltu_alku_pvm DESC
+      SELECT m.*,
+             u.id       AS user_id,
+             u.käyttäjäTunnus AS user_käyttäjäTunnus,
+             u.etunimi   AS user_etunimi,
+             u.sukunimi  AS user_sukunimi,
+             u.profile_picture_url AS user_profile_picture_url
+      FROM matkaAikeet m
+      LEFT JOIN käyttäjä u ON m.userId = u.id
+      ORDER BY m.suunniteltu_alku_pvm DESC
     `);
-    const result = stmt.all() as matkaAikeet[];
-    return result;
+    const rows = stmt.all() as any[];
+    return rows.map(row => {
+      const { user_id, user_käyttäjäTunnus, user_etunimi, user_sukunimi, user_profile_picture_url, ...plan } = row;
+      return {
+        ...plan,
+        user: user_id ? {
+          id: user_id,
+          käyttäjäTunnus: user_käyttäjäTunnus,
+          etunimi: user_etunimi,
+          sukunimi: user_sukunimi,
+          profile_picture_url: user_profile_picture_url,
+        } : undefined,
+      };
+    });
   },
 
   getTravelPlanById: (matkaAikeetId: number): matkaAikeet | undefined => {
@@ -462,6 +534,23 @@ const postContentsModel = {
     `);
     const result = stmt.all(daysBack, limit) as julkaisu[];
     return result;
-  },};
+  },
+
+  // media_images
+  addMediaImage: (julkaisuId: number, url: string): RunResult => {
+    const stmt = db.prepare(`
+      INSERT INTO media_images (julkaisuId, url)
+      VALUES (?, ?)
+    `);
+    return stmt.run(julkaisuId, url);
+  },
+
+  getMediaImages: (julkaisuId: number): { id: number; julkaisuId: number; url: string }[] => {
+    const stmt = db.prepare(`
+      SELECT * FROM media_images WHERE julkaisuId = ?
+    `);
+    return stmt.all(julkaisuId) as { id: number; julkaisuId: number; url: string }[];
+  },
+};
 
 export default postContentsModel;

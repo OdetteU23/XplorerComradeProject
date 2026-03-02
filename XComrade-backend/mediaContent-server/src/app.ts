@@ -2,6 +2,7 @@ import express, { Request, Response, NextFunction } from 'express';
 import cors from 'cors';
 import CustomError from './classes/CustomErrors';
 import mediaContentRoutes from './api/routes/mediaContentRoutes';
+import randomFeedsRoutes from './api/routes/randomFeedsRoutes';
 
 const app = express();
 
@@ -10,7 +11,9 @@ app.use(cors());
 app.use(express.json());
 
 // Routes
+app.use('/api', randomFeedsRoutes);
 app.use('/api', mediaContentRoutes);
+
 
 // Root endpoint
 app.get('/', (req: Request, res: Response) => {

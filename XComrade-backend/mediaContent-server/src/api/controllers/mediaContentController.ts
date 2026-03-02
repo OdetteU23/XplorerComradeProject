@@ -26,7 +26,7 @@ const getFeed = async (req: Request, res: Response): Promise<void> => {
     const limit = parseInt(req.query.limit as string) || 20;
     const offset = (page - 1) * limit;
 
-    const posts: julkaisu[] = mediaContentModel.getPosts(limit, offset);
+    const posts = mediaContentModel.getPostsEnriched(limit, offset);
     res.json(posts);
   } catch (error) {
     console.error('Error fetching feed:', error);
@@ -37,7 +37,7 @@ const getFeed = async (req: Request, res: Response): Promise<void> => {
 const getPost = async (req: Request, res: Response): Promise<void> => {
   try {
     const postId = parseInt(req.params.id);
-    const post: julkaisu | undefined = mediaContentModel.getPostById(postId);
+    const post = mediaContentModel.getPostByIdEnriched(postId);
 
     if (!post) {
       res.status(404).json({ message: 'Post not found' });
@@ -54,7 +54,7 @@ const getPost = async (req: Request, res: Response): Promise<void> => {
 const getUserPosts = async (req: Request, res: Response): Promise<void> => {
   try {
     const userId = parseInt(req.params.userId);
-    const posts: julkaisu[] = mediaContentModel.getUserPosts(userId);
+    const posts = mediaContentModel.getUserPostsEnriched(userId);
     res.json(posts);
   } catch (error) {
     console.error('Error fetching user posts:', error);
@@ -64,7 +64,7 @@ const getUserPosts = async (req: Request, res: Response): Promise<void> => {
 
 const createPost = async (req: AuthenticatedRequest, res: Response): Promise<void> => {
   try {
-    const { kuvaus, kohde, list_aktiviteetti } = req.body as Pick<julkaisu, 'kuvaus' | 'kohde' | 'list_aktiviteetti'>;
+    const { kuvaus, kohde, list_aktiviteetti, media_images, otsikko, media_type, media_url, sisältö } = req.body as Pick<julkaisu, 'kuvaus' | 'kohde' | 'list_aktiviteetti'> & { media_images?: string[]; otsikko?: string; media_type?: string; media_url?: string; sisältö?: string };
     const userId: number = req.user!.id;
 
     if (!kuvaus || !kohde) {
@@ -76,10 +76,23 @@ const createPost = async (req: AuthenticatedRequest, res: Response): Promise<voi
       kuvaus,
       kohde,
       userId,
-      list_aktiviteetti ? JSON.stringify(list_aktiviteetti) : undefined
+      list_aktiviteetti ? JSON.stringify(list_aktiviteetti) : undefined,
+      otsikko,
+      media_type,
+      media_url,
+      sisältö
     );
 
-    const newPost: julkaisu | undefined = mediaContentModel.getPostById(result.lastInsertRowid as number);
+    const postId = result.lastInsertRowid as number;
+
+    // Insert media images if provided
+    if (media_images && Array.isArray(media_images)) {
+      for (const imageUrl of media_images) {
+        mediaContentModel.addMediaImage(postId, imageUrl);
+      }
+    }
+
+    const newPost = mediaContentModel.getPostByIdEnriched(postId);
     res.status(201).json(newPost);
   } catch (error) {
     console.error('Error creating post:', error);
@@ -134,7 +147,7 @@ const getTrendingPosts = async (req: Request, res: Response): Promise<void> => {
   try {
     const limit = parseInt(req.query.limit as string) || 10;
     const daysBack = parseInt(req.query.days as string) || 7;
-    
+
     const posts: julkaisu[] = mediaContentModel.getTrendingPosts(limit, daysBack);
     res.json(posts);
   } catch (error) {
@@ -231,7 +244,7 @@ const checkLikeStatus = async (req: AuthenticatedRequest, res: Response): Promis
 
 const getTravelPlans = async (req: Request, res: Response): Promise<void> => {
   try {
-    const plans: matkaAikeet[] = mediaContentModel.getTravelPlans();
+    const plans = mediaContentModel.getTravelPlans();
     res.json(plans);
   } catch (error) {
     console.error('Error fetching travel plans:', error);

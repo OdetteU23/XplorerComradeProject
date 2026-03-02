@@ -1,28 +1,40 @@
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import { PääKäyttäjäProvider } from './content/käyttänKontentti';
-import { HomeView, SearchView, ExploreView, SettingsView } from './views/HomeView';
+import { HomeView, SearchView, SettingsView } from './views/HomeView';
 import { MessagesView, NotificationsView } from './views/MessagesView';
 import { ProfileView, FollowingView, BuddyRequestsView, MyTripsView } from './views/ProfileView';
 import { RegisterView, LoginView } from './views/Register&LoginView';
-import { UploadView, PostDetailView } from './views/UploadView';
+//import { UploadView, PostDetailView } from './views/UploadView';
 import { TravelPlansView, TravelPlanDetailView } from './views/TravelPlansView';
 import Layout, { ProtectedRoute, PublicRoute } from './components/Layout';
 import './App.css';
+import {UploadView} from './views/UploadView';
+import SingleView from './views/singleView';
 
 const App = () => {
   return (
     <BrowserRouter basename="/XplorerComrade">
       <PääKäyttäjäProvider>
         <Routes>
-          {/* Public routes */}
+          {/* Public routes (with gradient overlay) */}
           <Route path="/login" element={
             <PublicRoute>
-              <LoginView />
+              <div className="relative min-h-screen">
+                <div className="fixed inset-0 z-0 bg-gradient-to-b from-black/25 via-[rgba(26,26,46,0.6)] via-40% to-[rgba(26,26,46,0.97)] pointer-events-none" />
+                <div className="relative z-10">
+                  <LoginView />
+                </div>
+              </div>
             </PublicRoute>
           } />
           <Route path="/register" element={
             <PublicRoute>
-              <RegisterView />
+              <div className="relative min-h-screen">
+                <div className="fixed inset-0 z-0 bg-gradient-to-b from-black/25 via-[rgba(26,26,46,0.6)] via-40% to-[rgba(26,26,46,0.97)] pointer-events-none" />
+                <div className="relative z-10">
+                  <RegisterView />
+                </div>
+              </div>
             </PublicRoute>
           } />
 
@@ -35,11 +47,7 @@ const App = () => {
                 <SearchView />
               </ProtectedRoute>
             } />
-            <Route path="/explore" element={
-              <ProtectedRoute>
-                <ExploreView />
-              </ProtectedRoute>
-            } />
+
             <Route path="/messages" element={
               <ProtectedRoute>
                 <MessagesView />
@@ -54,6 +62,9 @@ const App = () => {
               <ProtectedRoute>
                 <ProfileView />
               </ProtectedRoute>
+            } />
+            <Route path="/profile/:userId" element={
+              <ProfileView />
             } />
             <Route path="/following" element={
               <ProtectedRoute>
@@ -85,10 +96,9 @@ const App = () => {
                 <UploadView />
               </ProtectedRoute>
             } />
+
             <Route path="/post/:id" element={
-              <ProtectedRoute>
-                <PostDetailView />
-              </ProtectedRoute>
+              <SingleView />
             } />
             <Route path="/settings" element={
               <ProtectedRoute>

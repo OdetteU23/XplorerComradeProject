@@ -26,7 +26,7 @@ export const PääKäyttäjäProvider = ({ children }: PääKäyttäjäProviderP
   useEffect(() => {
     const checkAuth = async () => {
       try {
-        const token = localStorage.getItem('auth_token');
+        const token = localStorage.getItem('authToken');
         if (token) {
           // Try to get current user with stored token
           const currentUser = await api.auth.getCurrentUser();
@@ -36,7 +36,7 @@ export const PääKäyttäjäProvider = ({ children }: PääKäyttäjäProviderP
       } catch (err) {
         // Token invalid or expired, clear it
         console.error('Auth check failed:', err);
-        localStorage.removeItem('auth_token');
+        localStorage.removeItem('authToken');
         setIsAuthenticated(false);
         setUser(null);
       } finally {
@@ -50,7 +50,8 @@ export const PääKäyttäjäProvider = ({ children }: PääKäyttäjäProviderP
   const login = async (credentials: loginInfo) => {
     try {
       const response = await api.auth.login(credentials);
-      // Token is automatically stored by the API client
+      // Token is automatically stored by the API client (response used for future needs)
+      void response;
       const currentUser = await api.auth.getCurrentUser();
       setUser(currentUser);
       setIsAuthenticated(true);
@@ -62,9 +63,12 @@ export const PääKäyttäjäProvider = ({ children }: PääKäyttäjäProviderP
 
   const register = async (data: registeringInfo) => {
     try {
-      await api.auth.register(data);
-      // After registration, user needs to log in
-      // Or you can auto-login here
+      const response = await api.auth.register(data);
+      // Auto-login after registration — token is stored by FetchingData.ts
+      const currentUser = await api.auth.getCurrentUser();
+      setUser(currentUser);
+      setIsAuthenticated(true);
+      return response;
     } catch (err) {
       console.error('Registration failed:', err);
       throw err;
@@ -78,7 +82,7 @@ export const PääKäyttäjäProvider = ({ children }: PääKäyttäjäProviderP
       console.error('Logout error:', err);
     } finally {
       // Clear local state regardless of API call result
-      localStorage.removeItem('auth_token');
+      localStorage.removeItem('authToken');
       setUser(null);
       setIsAuthenticated(false);
     }
@@ -95,6 +99,7 @@ export const PääKäyttäjäProvider = ({ children }: PääKäyttäjäProviderP
     isAuthenticated,
     isLoading,
     login,
+    register,
     logout,
     updateUser,
   };

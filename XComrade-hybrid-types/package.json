@@ -1,5 +1,5 @@
 {
-  "name": "@xplorercomrade/types-server",
+  "name": "@xcomrade/types-server",
   "version": "1.0.0",
   "description": "Shared TypeScript types for XplorerComrade app's frontend-server and backend-server development",
   "main": "dist/index.js",

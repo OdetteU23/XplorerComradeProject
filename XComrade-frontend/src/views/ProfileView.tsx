@@ -7,16 +7,21 @@ import { BuddyRequestCard } from '../components/TravelPlans';
 import { TravelPlanList } from '../components/TravelPlans';
 import { api } from '../../utilHelpers/FetchingData';
 import { useKäyttäjä } from '../content/käyttänKontentti';
+import { useParams } from 'react-router-dom';
 
 const ProfileView = () => {
+  const { userId: paramUserId } = useParams<{ userId: string }>();
+  const { user: currentUser } = useKäyttäjä();
   const [user, setUser] = useState<userProfile | null>(null);
   const [userPosts, setUserPosts] = useState<julkaisuWithRelations[]>([]);
   const [stats, setStats] = useState<UserStats>({ postsCount: 0, followersCount: 0, followingCount: 0 });
-  const [isOwnProfile] = useState(true); // TODO: Determine from route params and auth
   const [isFollowing, setIsFollowing] = useState(false);
   const [activeTab, setActiveTab] = useState<'posts' | 'trips'>('posts');
   const [isLoading, setIsLoading] = useState(true);
-  const [userId] = useState(1); // TODO: Get from route params or auth
+
+  // Determine userId: from URL params or fall back to current user
+  const userId = paramUserId ? parseInt(paramUserId, 10) : (currentUser?.id ?? 0);
+  const isOwnProfile = !paramUserId || userId === currentUser?.id;
 
   useEffect(() => {
     loadUserProfile();
@@ -25,16 +30,27 @@ const ProfileView = () => {
   const loadUserProfile = async () => {
     try {
       setIsLoading(true);
-      const [profile, posts, userStats, followStatus] = await Promise.all([
+
+      // Public data — always safe to fetch
+      const [profile, posts, userStats] = await Promise.all([
         api.user.getProfile(userId),
         api.post.getUserPosts(userId),
         api.user.getUserStats(userId),
-        api.follow.isFollowing(userId),
       ]);
       setUser(profile);
       setUserPosts(posts);
       setStats(userStats);
-      setIsFollowing(Boolean((followStatus as { success?: boolean })?.success));
+
+      // Follow status — only fetch when logged in and viewing another user's profile
+      if (currentUser && !isOwnProfile) {
+        try {
+          const followStatus = await api.follow.isFollowing(userId);
+          setIsFollowing(Boolean((followStatus as { success?: boolean })?.success));
+        } catch {
+          // Silently ignore — user might not have follow access
+          setIsFollowing(false);
+        }
+      }
     } catch (err) {
       console.error('Load user profile error:', err);
     } finally {
