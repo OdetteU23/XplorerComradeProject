@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { julkaisu, media_images } from '@xcomrade/types-server';
 
 interface UseAPIOptions {
   immediate?: boolean; // Execute immediately on mount
@@ -95,5 +96,55 @@ export function useFormSubmit<T, P>(
 
   return { submit, isSubmitting, error, success, reset };
 }
+const postImages = async (
+  image: julkaisu,
+  input: Record<string, any>,
+  token: string
+) => {
 
-export default useAPI;
+    const formData = new FormData();
+    formData.append('image', JSON.stringify(image));
+    for (const key in input) {
+      formData.append(key, input[key]);
+    }
+    const contentData = {
+      imagekuvaus: image.kuvaus,
+      julkaisuId: image.Date_ajakohta.getTime(),
+      ...input,
+    };
+    formData.append('contentData', JSON.stringify(contentData));
+    const options = {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify(contentData),
+    };
+    const response = await fetch(
+      import.meta.env.BASE_URL +'upload',
+      options
+    );
+    return response.json() as Promise<media_images>;
+};
+const useContent= () => {
+  const postContents = async (contents: julkaisu[]| media_images[], token: string) => {
+    const formData = new FormData();
+    formData.append('contents', JSON.stringify(contents));
+    const options = {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+      body: formData,
+    };
+    return await fetch(
+      import.meta.env.BASE_URL +'upload',
+      options
+    ).then(res => res.json());
+  };
+
+  return { postContents };
+};
+export { postImages, useContent };
+
+export default {useAPI};

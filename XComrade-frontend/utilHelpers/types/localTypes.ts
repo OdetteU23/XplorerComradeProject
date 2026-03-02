@@ -1,4 +1,4 @@
-import type {
+import type {julkaisu, media_images,
   loginInfo,
   userProfile,
   friendRequest,
@@ -18,7 +18,6 @@ export type authens = {
 export type ViewType =
   | 'home'
   | 'search'
-  | 'explore'
   | 'messages'
   | 'notifications'
   | 'profile'
@@ -64,6 +63,34 @@ export interface TravelPlanWithUser extends matkaAikeet {
 
 export interface BuddyRequestWithUser extends friendRequest {
   requester: Pick<userProfile, 'id' | 'käyttäjäTunnus' | 'etunimi' | 'sukunimi' | 'profile_picture_url'>;
+}
+export interface ContentItem {
+    content_id: number;
+    user_id: number;
+    filename: string;
+    thumbnail: string;
+    filesize: number;
+    contentType: string;
+    otsikko: string;
+    kuvaus: string | null;
+    Date_ajakohta: string | Date;
+    screenshots: string[] | null;
+}
+export interface ContentItemOwner extends julkaisu {
+  owner: Pick<userProfile, 'käyttäjäTunnus' | 'etunimi' | 'profile_picture_url'>;
+  contentType: 'post' | 'travel-plan' | 'Thread' | string;
+  julkaisuKuvat: media_images[];
+  otsikko?: string;
+}
+//Thread content types
+export interface ThreadContentItem extends ContentItemOwner {
+  threadId: number;
+  threadTitle: string;
+  threadOwner: Pick<userProfile, 'käyttäjäTunnus' | 'etunimi' | 'profile_picture_url'>;
+  parentId: number | null;
+  threadCreatedAt: (string | Date)[];
+  children: ThreadContentItem[];
+  replies: ThreadContentItem[];
 }
 
 export interface ParticipantWithUser extends tripParticipants {

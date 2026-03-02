@@ -15,6 +15,9 @@ app.use(cors({
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
+// Serve uploaded files as static assets
+app.use('/uploads', express.static('uploads'));
+
 // Routes
 app.get('/', (_req: Request, res: Response) => {
   res.json({

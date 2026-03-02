@@ -28,10 +28,16 @@ type logoutInfo = {
 type julkaisu = {
     id: number;
     userId : userProfile['id'];
+    otsikko?: string;
+    sisältö?: string;
     Date_ajakohta: Date;
     kuvaus: string;
     kohde: string;
-    list_aktiviteetti: string[]; 
+    media_url?: string;
+    media_type?: string;        // e.g. 'image/jpeg', 'video/mp4'
+    list_aktiviteetti: string[];
+    luotu?: string;
+    päivitetty?: string;
 };
 
 type tykkäykset = {

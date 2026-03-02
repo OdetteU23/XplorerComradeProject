@@ -38,44 +38,82 @@ interface TravelPlanCardProps {
 }
 
 const TravelPlanCard = ({ plan, onRequestJoin, onViewDetails }: TravelPlanCardProps) => {
+  const startDate = new Date(plan.suunniteltu_alku_pvm).toLocaleDateString('fi-FI');
+  const endDate = new Date(plan.suunniteltu_loppu_pvm).toLocaleDateString('fi-FI');
+  const activities = toArray(plan.aktiviteetit);
+  const budgetArr = toArray(plan.budjetti);
+
   return (
-    <div className="travel-plan-card">
-      {plan.user && (
-        <div className="plan-creator">
-          <img
-            src={plan.user.profile_picture_url || DEFAULT_AVATAR}
-            alt={plan.user.käyttäjäTunnus}
-          />
-          <span>{plan.user.etunimi} {plan.user.sukunimi}</span>
-        </div>
-      )}
-
-      <div className="plan-content">
-        <h3>🌍 {plan.kohde}</h3>
-        <p className="plan-dates">
-          <FaCalendarAlt /> {new Date(plan.suunniteltu_alku_pvm).toLocaleDateString()} - {new Date(plan.suunniteltu_loppu_pvm).toLocaleDateString()}
-        </p>
-        {plan.kuvaus && <p className="plan-description">{plan.kuvaus}</p>}
-
-        <ActivityChips activities={toArray(plan.aktiviteetit)} />
-
-        {(() => {
-          const budgetArr = toArray(plan.budjetti);
-          return budgetArr.length > 0 ? (
-            <div className="plan-budget">
-              <strong>Budget:</strong> {budgetArr.join(', ')}
-            </div>
-          ) : null;
-        })()}
-
-        {plan.participantsCount !== undefined && (
-          <p className="participants-count">👥 {plan.participantsCount} participant(s)</p>
+    <div
+      className="group flex flex-col rounded-xl overflow-hidden
+                 bg-white/10 backdrop-blur-sm border border-white/[0.08]
+                 hover:border-white/20 hover:shadow-lg hover:-translate-y-0.5
+                 transition-all cursor-pointer"
+      onClick={() => onViewDetails?.(plan.id)}
+    >
+      {/* Destination header band */}
+      <div className="relative w-full aspect-[4/3] overflow-hidden bg-gradient-to-br from-indigo-600/30 to-purple-600/20 flex flex-col items-center justify-center p-4">
+        {/* Creator profile at top-left */}
+        {plan.user && (
+          <div className="absolute top-3 left-3 flex items-center gap-2 bg-black/40 backdrop-blur-sm rounded-full pr-3 pl-1 py-1">
+            <img
+              src={plan.user.profile_picture_url || DEFAULT_AVATAR}
+              alt={plan.user.käyttäjäTunnus}
+              className="w-6 h-6 rounded-full object-cover"
+            />
+            <span className="text-white text-xs font-medium">
+              {plan.user.käyttäjäTunnus || plan.user.etunimi}
+            </span>
+          </div>
         )}
+        <span className="text-4xl mb-2">🌍</span>
+        <h3 className="text-white font-bold text-lg text-center leading-tight">{plan.kohde}</h3>
+        <p className="text-white/60 text-xs mt-1 flex items-center gap-1">
+          <FaCalendarAlt className="inline-block" /> {startDate} – {endDate}
+        </p>
       </div>
 
-      <div className="plan-actions">
-        <button onClick={() => onViewDetails?.(plan.id)}>View Details</button>
-        <button onClick={() => onRequestJoin?.(plan.id)}>Request to Join</button>
+      {/* Card body */}
+      <div className="flex flex-col flex-1 p-4 gap-1">
+        {plan.kuvaus && (
+          <p className="text-white/70 font-medium text-sm line-clamp-2">{plan.kuvaus}</p>
+        )}
+
+        {/* Info box */}
+        <div className="mt-2 rounded-lg border border-white/10 bg-white/5 p-2.5 text-xs text-white/60 space-y-0.5">
+          <p><span className="text-white/40">Destination:</span> {plan.kohde}</p>
+          <p><span className="text-white/40">Dates:</span> {startDate} – {endDate}</p>
+          {activities.length > 0 && (
+            <p><span className="text-white/40">Activities:</span> {activities.join(', ')}</p>
+          )}
+          {budgetArr.length > 0 && (
+            <p><span className="text-white/40">Budget:</span> {budgetArr.join(', ')}</p>
+          )}
+          {plan.participantsCount !== undefined && (
+            <p><span className="text-white/40">Participants:</span> {plan.participantsCount}</p>
+          )}
+        </div>
+
+        {/* Actions row */}
+        <div className="flex items-center gap-3 mt-3 pt-2 border-t border-white/10">
+          <button
+            className="flex items-center gap-1 text-xs text-white/60 hover:text-blue-400 transition-colors bg-transparent border-none p-0 m-0 cursor-pointer"
+            onClick={(e) => { e.stopPropagation(); onViewDetails?.(plan.id); }}
+          >
+            View Details
+          </button>
+          <button
+            className="flex items-center gap-1 text-xs text-white/60 hover:text-green-400 transition-colors bg-transparent border-none p-0 m-0 cursor-pointer"
+            onClick={(e) => { e.stopPropagation(); onRequestJoin?.(plan.id); }}
+          >
+            Request to Join
+          </button>
+          {plan.user && (
+            <span className="ml-auto text-xs text-white/40">
+              Created by: @{plan.user.käyttäjäTunnus || plan.user.etunimi}
+            </span>
+          )}
+        </div>
       </div>
     </div>
   );
@@ -89,19 +127,21 @@ interface TravelPlanListProps {
 
 const TravelPlanList = ({ plans, onRequestJoin, onViewDetails }: TravelPlanListProps) => {
   return (
-    <div className="travel-plan-list">
-      <h2>Travel Plans</h2>
+    <div>
+      <h2 className="text-xl font-bold text-white mb-5">Travel Plans</h2>
       {plans.length === 0 ? (
-        <p className="empty-message">No travel plans available</p>
+        <p className="text-white/50">No travel plans available</p>
       ) : (
-        plans.map((plan) => (
-          <TravelPlanCard
-            key={plan.id}
-            plan={plan}
-            onRequestJoin={onRequestJoin}
-            onViewDetails={onViewDetails}
-          />
-        ))
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5">
+          {plans.map((plan) => (
+            <TravelPlanCard
+              key={plan.id}
+              plan={plan}
+              onRequestJoin={onRequestJoin}
+              onViewDetails={onViewDetails}
+            />
+          ))}
+        </div>
       )}
     </div>
   );

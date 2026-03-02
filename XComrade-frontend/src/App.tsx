@@ -1,13 +1,15 @@
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import { PääKäyttäjäProvider } from './content/käyttänKontentti';
-import { HomeView, SearchView, ExploreView, SettingsView } from './views/HomeView';
+import { HomeView, SearchView, SettingsView } from './views/HomeView';
 import { MessagesView, NotificationsView } from './views/MessagesView';
 import { ProfileView, FollowingView, BuddyRequestsView, MyTripsView } from './views/ProfileView';
 import { RegisterView, LoginView } from './views/Register&LoginView';
-import { UploadView, PostDetailView } from './views/UploadView';
+//import { UploadView, PostDetailView } from './views/UploadView';
 import { TravelPlansView, TravelPlanDetailView } from './views/TravelPlansView';
 import Layout, { ProtectedRoute, PublicRoute } from './components/Layout';
 import './App.css';
+import {UploadView} from './views/UploadView';
+import SingleView from './views/singleView';
 
 const App = () => {
   return (
@@ -45,7 +47,7 @@ const App = () => {
                 <SearchView />
               </ProtectedRoute>
             } />
-            <Route path="/explore" element={<ExploreView />} />
+
             <Route path="/messages" element={
               <ProtectedRoute>
                 <MessagesView />
@@ -60,6 +62,9 @@ const App = () => {
               <ProtectedRoute>
                 <ProfileView />
               </ProtectedRoute>
+            } />
+            <Route path="/profile/:userId" element={
+              <ProfileView />
             } />
             <Route path="/following" element={
               <ProtectedRoute>
@@ -91,10 +96,9 @@ const App = () => {
                 <UploadView />
               </ProtectedRoute>
             } />
+
             <Route path="/post/:id" element={
-              <ProtectedRoute>
-                <PostDetailView />
-              </ProtectedRoute>
+              <SingleView />
             } />
             <Route path="/settings" element={
               <ProtectedRoute>

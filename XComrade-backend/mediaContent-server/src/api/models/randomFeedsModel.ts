@@ -32,7 +32,7 @@ const randomFeedsModel = {
       `).all(post.id) as tykkäykset[];
 
       const media_images = db.prepare(`
-        SELECT * FROM media_images WHERE julkaisuId = ?
+        SELECT id, julkaisuId, url AS image_url FROM media_images WHERE julkaisuId = ?
       `).all(post.id) as media_images[];
 
       // Parsing list_aktiviteetti from JSON string to string[]

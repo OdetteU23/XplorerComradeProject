@@ -1,6 +1,6 @@
 import type { julkaisuWithRelations, userProfile, UserSearchResult } from '@xcomrade/types-server';
 import { useState, useEffect, useReducer } from 'react';
-import { FeedList } from '../components/Feeds';
+import  { FeedList } from '../components/Feeds';
 import { SearchBar } from '../components/Forms';
 import { UserList } from '../components/Profile';
 import PublicViewPrompt from '../components/publicViewPromp';
@@ -8,8 +8,8 @@ import { useKäyttäjä } from '../content/käyttänKontentti';
 import { api } from '../../utilHelpers/FetchingData';
 import { GiWorld } from 'react-icons/gi';
 import { IoIosWarning } from 'react-icons/io';
-import { FaFire, FaStar } from 'react-icons/fa6';
-import { FaMapMarkerAlt } from 'react-icons/fa';
+
+import { Link, useNavigate } from 'react-router-dom';
 
 // ---- useReducer for HomeView ----
 interface HomeState {
@@ -64,11 +64,17 @@ const HomeView = () => {
   const [state, dispatch] = useReducer(homeReducer, homeInitialState);
   const { posts, randomPosts, suggestedUsers, isLoading, error } = state;
   const { isAuthenticated } = useKäyttäjä();
+  const navigate = useNavigate();
+
+  // Deduplicate: remove posts already shown in the main feed from the random/explore section
+  const feedPostIds = new Set(posts.map(p => p.id));
+  const uniqueRandomPosts = randomPosts.filter(p => !feedPostIds.has(p.id));
 
   // Apply content limit for unauthenticated users
   const visiblePosts = isAuthenticated ? posts : posts.slice(0, GUEST_CONTENT_LIMIT);
-  const visibleRandomPosts = isAuthenticated ? randomPosts : randomPosts.slice(0, GUEST_CONTENT_LIMIT);
+  const visibleRandomPosts = isAuthenticated ? uniqueRandomPosts : uniqueRandomPosts.slice(0, GUEST_CONTENT_LIMIT);
   const visibleSuggestedUsers = isAuthenticated ? suggestedUsers : suggestedUsers.slice(0, GUEST_CONTENT_LIMIT);
+  //const visibleFeedSection = isAuthenticated ? <Feeds posts={visiblePosts} onLike={handleLike} onComment={handleComment} /> : <Feeds posts={visiblePosts} onLike={handleLike} onComment={handleComment} />;
 
   useEffect(() => {
     loadFeed();
@@ -164,21 +170,24 @@ const HomeView = () => {
   return (
     <div>
       {/* Hero text over background */}
-      <div className="max-w-7xl mx-auto w-full px-8 pt-16 pb-8 text-white">
+      <div className="max-w-7xl mx-auto w-full px-8 pt-16 pb-8 text-white text-center">
+        <div className="flex justify-center mb-3">
+          <GiWorld className="text-5xl drop-shadow-[0_2px_16px_rgba(0,0,0,0.5)]" />
+        </div>
         <h1 className="text-5xl font-extrabold mb-2 tracking-tight drop-shadow-[0_2px_16px_rgba(0,0,0,0.5)]">
-          Explore the World
+          Explore the World with us
         </h1>
-        <p className="text-lg max-w-lg text-white/90 mb-6 drop-shadow-[0_1px_10px_rgba(0,0,0,0.4)]">
+        <p className="text-lg max-w-lg mx-auto text-white/90 mb-6 drop-shadow-[0_1px_10px_rgba(0,0,0,0.4)]">
           Discover breathtaking destinations, share your journeys, and connect with fellow travelers.
         </p>
         {!isAuthenticated && (
-          <div className="flex gap-3">
-            <a href="/register" className="px-6 py-2.5 rounded-full text-sm font-semibold bg-indigo-600 text-white no-underline hover:bg-indigo-700 hover:-translate-y-0.5 hover:shadow-lg transition-all">
+          <div className="flex justify-center gap-3">
+            <Link to="/register" className="px-6 py-2.5 rounded-full text-sm font-semibold bg-indigo-600 text-white no-underline hover:bg-indigo-700 hover:-translate-y-0.5 hover:shadow-lg transition-all">
               Get Started
-            </a>
-            <a href="/login" className="px-6 py-2.5 rounded-full text-sm font-semibold text-white no-underline bg-white/15 backdrop-blur-sm border border-white/25 hover:bg-white/25 hover:-translate-y-0.5 hover:shadow-lg transition-all">
+            </Link>
+            <Link to="/login" className="px-6 py-2.5 rounded-full text-sm font-semibold text-white no-underline bg-white/15 backdrop-blur-sm border border-white/25 hover:bg-white/25 hover:-translate-y-0.5 hover:shadow-lg transition-all">
               Sign In
-            </a>
+            </Link>
           </div>
         )}
       </div>
@@ -191,18 +200,35 @@ const HomeView = () => {
         </div>
       )}
 
-      {/* Content grid */}
-      <div className="grid grid-cols-1 lg:grid-cols-[1fr_380px] gap-8 max-w-7xl mx-auto px-4 pb-8">
+      {/* Main feed - full width card grid */}
+      <div className="max-w-[1400px] mx-auto px-4 pb-8">
 
-        {/* LEFT: Main feed from followed users */}
-        <div>
-          <h2 className="text-xl font-bold text-white mb-4">Your Feed</h2>
-          {visiblePosts.length === 0 ? (
+        {/* The Feed */}
+        <section className="mb-10">
+          {!isAuthenticated && (
             <div className="text-center py-12 px-8 bg-white/[0.04] border border-dashed border-white/15 rounded-2xl">
-              <span className="text-5xl block mb-3"><GiWorld /></span>
-              <h3 className="text-lg font-semibold text-white mb-2">Your feed is empty</h3>
-              <p className="text-white/60 text-sm max-w-xs mx-auto">You are not following anyone yet. Discover travelers on the right and start following!</p>
+              <h4 className="text-lg font-semibold text-white mb-2">Register/Login to discover travel content from people you follow!</h4>
             </div>
+          )}
+          {/*
+          {!isAuthenticated && (
+            <div className="text-center py-12 px-8 bg-white/[0.04] border border-dashed border-white/15 rounded-2xl">
+            </div>
+          )}
+        */}
+          {visiblePosts.length === 0 ? (
+            isAuthenticated ? (
+              <>
+                <h2 className="text-xl font-bold text-white mb-5">The Feed</h2>
+                <div className="text-center py-12 px-8 bg-white/[0.04] border border-dashed border-white/15 rounded-2xl">
+                  <div className="flex justify-center mb-3">
+                    <GiWorld className="text-5xl text-white/70" />
+                  </div>
+                  <h3 className="text-lg font-semibold text-white mb-2">You are not following anyone yet. Discover travelers below and start following!</h3>
+                </div>
+              </>
+            )
+             : null
           ) : (
             <FeedList
               posts={visiblePosts}
@@ -213,35 +239,34 @@ const HomeView = () => {
           {!isAuthenticated && posts.length > GUEST_CONTENT_LIMIT && (
             <PublicViewPrompt message="Sign in to see more travel posts from people you follow!" />
           )}
-        </div>
-
-        {/* RIGHT: Discovery sidebar */}
-        <div className="flex flex-col gap-6">
-
-          {/* Suggested users to follow */}
-          <section className="bg-white/5 border border-white/[0.08] rounded-2xl p-5 backdrop-blur-sm">
-            <h3 className="text-base font-bold text-white/90 mb-4">People you might like</h3>
+        </section>
+                {/* Suggested users row */}
+        {suggestedUsers.length > 0 && (
+          <section className="mb-8 bg-white/5 border border-white/[0.08] rounded-2xl p-5 backdrop-blur-sm">
+            <h3 className="text-base font-bold text-white/90 mb-4">Creators you might like</h3>
             <UserList
               users={visibleSuggestedUsers}
               title="Suggested Users"
               emptyMessage="No suggestions available."
+              onUserClick={(userId) => navigate(`/profile/${userId}`)}
             />
           </section>
+        )}
 
-          {/* Random posts from unfollowed users */}
-          <section className="bg-white/5 border border-white/[0.08] rounded-2xl p-5 backdrop-blur-sm">
-            <h3 className="text-base font-bold text-white/90 mb-4">Explore posts</h3>
+        {/* Explore posts */}
+        {visibleRandomPosts.length > 0 && (
+          <section className="mb-10">
+            <h2 className="text-xl font-bold text-white mb-5">Explore</h2>
             <FeedList
               posts={visibleRandomPosts}
               onLike={handleLike}
               onComment={handleComment}
             />
-            {!isAuthenticated && randomPosts.length > GUEST_CONTENT_LIMIT && (
+            {!isAuthenticated && uniqueRandomPosts.length > GUEST_CONTENT_LIMIT && (
               <PublicViewPrompt message="Sign in to discover more travel experiences!" />
             )}
           </section>
-
-        </div>
+        )}
       </div>
     </div>
   );
@@ -253,8 +278,33 @@ const SearchView = () => {
     users: UserSearchResult[];
     posts: julkaisuWithRelations[];
   }>({ users: [], posts: [] });
-  const [activeTab, setActiveTab] = useState<'users' | 'posts'>('users');
+  const [activeTab, setActiveTab] = useState<'users' | 'posts'>('posts');
   const [isSearching, setIsSearching] = useState(false);
+  const navigate = useNavigate();
+
+  // Default random content shown before any search
+  const [defaultUsers, setDefaultUsers] = useState<userProfile[]>([]);
+  const [defaultPosts, setDefaultPosts] = useState<julkaisuWithRelations[]>([]);
+  const [isLoadingDefaults, setIsLoadingDefaults] = useState(true);
+
+  useEffect(() => {
+    const loadDefaults = async () => {
+      setIsLoadingDefaults(true);
+      try {
+        const [users, posts] = await Promise.all([
+          api.randomUser.getRandomUsers(20),
+          api.randomPost.getRandomPosts(20),
+        ]);
+        setDefaultUsers(users);
+        setDefaultPosts(posts);
+      } catch (err) {
+        console.error('Failed to load default content:', err);
+      } finally {
+        setIsLoadingDefaults(false);
+      }
+    };
+    loadDefaults();
+  }, []);
 
   const handleSearch = async (query: string) => {
     setSearchQuery(query);
@@ -277,9 +327,14 @@ const SearchView = () => {
     }
   };
 
+  // Decide which data to display: search results when searching, defaults otherwise
+  const hasQuery = searchQuery.trim().length > 0;
+  const displayUsers = hasQuery ? searchResults.users : defaultUsers;
+  const displayPosts = hasQuery ? searchResults.posts : defaultPosts;
+
   return (
     <div className="search-view">
-      <h2>Discover</h2>
+      <h1>Discover different contents based on the users, destinations and posts</h1>
       <SearchBar
         onSearch={handleSearch}
         placeholder="Search users and destinations..."
@@ -300,22 +355,23 @@ const SearchView = () => {
         </button>
       </div>
 
-      <div className="search-results">
-        {isSearching ? (
-          <p>Searching...</p>
+      <div className="max-w-[1400px] mx-auto px-4 pb-8">
+        {isSearching || isLoadingDefaults ? (
+          <p>{isSearching ? 'Searching...' : 'Loading...'}</p>
         ) : activeTab === 'users' ? (
           <UserList
-            users={searchResults.users}
-            title="Users"
-            emptyMessage={searchQuery ? "No users found. Try a different search." : "Start searching for users"}
+            users={displayUsers}
+            title={hasQuery ? "Search Results" : "Users"}
+            emptyMessage={hasQuery ? "No users found. Try a different search." : "No users to show yet"}
+            onUserClick={(userId) => navigate(`/profile/${userId}`)}
           />
         ) : (
-          <div className="posts-results">
-            {searchResults.posts.length === 0 ? (
-              <p>{searchQuery ? "No posts found. Try a different search." : "Start searching for posts"}</p>
+          <div>
+            {displayPosts.length === 0 ? (
+              <p>{hasQuery ? "No posts found. Try a different search." : "No posts to show yet"}</p>
             ) : (
               <FeedList
-                posts={searchResults.posts}
+                posts={displayPosts}
                 onLike={async (id) => {
                   try {
                     await api.like.likePost(id);
@@ -335,96 +391,6 @@ const SearchView = () => {
           </div>
         )}
       </div>
-    </div>
-  );
-};
-
-const ExploreView = () => {
-  const [trendingPosts, setTrendingPosts] = useState<julkaisuWithRelations[]>([]);
-  const [popularDestinations, setPopularDestinations] = useState<string[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const { isAuthenticated } = useKäyttäjä();
-
-  // Apply content limit for unauthenticated users
-  const visibleTrendingPosts = isAuthenticated ? trendingPosts : trendingPosts.slice(0, GUEST_CONTENT_LIMIT);
-  const visibleDestinations = isAuthenticated ? popularDestinations : popularDestinations.slice(0, GUEST_CONTENT_LIMIT);
-
-  useEffect(() => {
-    loadTrendingContent();
-  }, []);
-
-  const loadTrendingContent = async () => {
-    try {
-      setIsLoading(true);
-      const trending = await api.post.getTrendingPosts();
-      setTrendingPosts(trending);
-      // Extract popular destinations from trending posts
-      const destinations = trending
-        .map(post => post.kohde)
-        .filter((value, index, self) => self.indexOf(value) === index)
-        .slice(0, 10);
-      setPopularDestinations(destinations);
-    } catch (err) {
-      console.error('Trending content error:', err);
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  return (
-    <div className="explore-view">
-      <h2>Explore</h2>
-
-      {isLoading ? (
-        <p>Loading trending content...</p>
-      ) : (
-        <>
-          <section className="popular-destinations">
-            <h3><FaFire /> Popular Destinations</h3>
-            {visibleDestinations.length === 0 ? (
-              <p>No trending destinations at the moment.</p>
-            ) : (
-              <div className="destination-chips">
-                {visibleDestinations.map((destination, index) => (
-                  <span key={index} className="destination-chip">
-                    <FaMapMarkerAlt /> {destination}
-                  </span>
-                ))}
-              </div>
-            )}
-          </section>
-
-          <section className="trending-posts">
-            <h3><FaStar /> Trending Travel Experiences</h3>
-            {visibleTrendingPosts.length === 0 ? (
-              <p>No trending posts at the moment.</p>
-            ) : (
-              <FeedList
-                posts={visibleTrendingPosts}
-                onLike={async (id) => {
-                  try {
-                    await api.like.likePost(id);
-                    loadTrendingContent();
-                  } catch (err) {
-                    console.error('Like error:', err);
-                  }
-                }}
-                onComment={async (id, comment) => {
-                  try {
-                    await api.comment.addComment(id, comment);
-                    loadTrendingContent();
-                  } catch (err) {
-                    console.error('Comment error:', err);
-                  }
-                }}
-              />
-            )}
-            {!isAuthenticated && trendingPosts.length > GUEST_CONTENT_LIMIT && (
-              <PublicViewPrompt message="Sign in to explore all trending travel content!" />
-            )}
-          </section>
-        </>
-      )}
     </div>
   );
 };
@@ -536,4 +502,4 @@ const SettingsView = () => {
   );
 };
 
-export { HomeView, SearchView, ExploreView, SettingsView };
+export { HomeView, SearchView, SettingsView };

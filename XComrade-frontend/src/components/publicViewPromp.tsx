@@ -1,3 +1,4 @@
+import { CiLock } from 'react-icons/ci';
 import { useNavigate } from 'react-router-dom';
 
 interface PublicViewPromptProps {
@@ -10,7 +11,7 @@ const PublicViewPrompt = ({ message }: PublicViewPromptProps) => {
   return (
     <div className="login-prompt-overlay">
       <div className="login-prompt-card">
-        <h3>🔒 Want to see more?</h3>
+        <h3><CiLock /> Want to see more?</h3>
         <p>{message || 'Sign in to unlock all content and features on XplorerComrade!'}</p>
         <div className="login-prompt-actions">
           <button className="login-prompt-btn primary" onClick={() => navigate('/login')}>
