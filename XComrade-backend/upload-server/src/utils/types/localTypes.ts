@@ -1,6 +1,3 @@
-//import { Response as ExpressResponse } from 'express';
-//import { chatMessages } from '@xcomrade/types-server';
-
 declare module 'express-serve-static-core' {
   interface Request {
     user?: {
@@ -10,9 +7,6 @@ declare module 'express-serve-static-core' {
   }
 }
 
-//type Response = Express.Response;
-
-//type Response = ExpressResponse<unknown | undefined>;
 type UploadMessage =  {
   message: string;
   data: {

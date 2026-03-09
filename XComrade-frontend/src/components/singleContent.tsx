@@ -140,9 +140,6 @@ const SingleContent = (props: {
             </section>
           )}
 
-          {/* TODO: Likes */}
-          {/* TODO: Comment section */}
-
           <button
             className="mt-4 block w-full rounded bg-stone-500 p-2 text-center transition-all duration-500 ease-in-out hover:bg-stone-700"
             onClick={() => setSelectedContent(undefined)}

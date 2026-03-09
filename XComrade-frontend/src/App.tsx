@@ -1,10 +1,11 @@
-import { BrowserRouter, Routes, Route } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { PääKäyttäjäProvider } from './content/käyttänKontentti';
-import { HomeView, SearchView, SettingsView } from './views/HomeView';
+import { HomeView } from './views/HomeView';
+import { SearchView } from './views/SearchView';
+import { SettingsView } from './views/notificationsView';
 import { MessagesView, NotificationsView } from './views/MessagesView';
-import { ProfileView, FollowingView, BuddyRequestsView, MyTripsView } from './views/ProfileView';
+import { ProfileView, FollowingView, MyTripsView } from './views/ProfileView';
 import { RegisterView, LoginView } from './views/Register&LoginView';
-//import { UploadView, PostDetailView } from './views/UploadView';
 import { TravelPlansView, TravelPlanDetailView } from './views/TravelPlansView';
 import Layout, { ProtectedRoute, PublicRoute } from './components/Layout';
 import './App.css';
@@ -58,6 +59,7 @@ const App = () => {
                 <NotificationsView />
               </ProtectedRoute>
             } />
+
             <Route path="/profile" element={
               <ProtectedRoute>
                 <ProfileView />
@@ -72,9 +74,7 @@ const App = () => {
               </ProtectedRoute>
             } />
             <Route path="/buddy-requests" element={
-              <ProtectedRoute>
-                <BuddyRequestsView />
-              </ProtectedRoute>
+              <Navigate to="/notifications" replace />
             } />
             <Route path="/my-trips" element={
               <ProtectedRoute>

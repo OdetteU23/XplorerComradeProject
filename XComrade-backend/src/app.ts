@@ -1,5 +1,4 @@
 import express, { Request, Response, NextFunction } from 'express';
-//import CustomError from './CustomError';
 import CustomError from './classes/CustomErrors';
 
 const app = express();

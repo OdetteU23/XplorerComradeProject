@@ -114,10 +114,8 @@ const Uploads = () => {
   const {handleInputChange, handlePostSubmit, inputs, setInputs} = usePostForm(
     isUpload,
     inituploadValues,
-    //postContents
   );
   const handleImageChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-    //const images = event.target.files;
     if (event.target.files && event.target.files.length > 0) {
       setUploadedImages(event.target.files[0]);
     }
@@ -236,8 +234,6 @@ const Uploads = () => {
   )
 }
 const PostThreadContent = () => {
-  //Todo: Implementing just the text content (Threads like contents for users, where they can share their travel stories, and others can comment/like them)
-  //The logic is the same as image uploading, but without the file input and preview. The post can be created with text content or with an images/short videos.
   const [isSubmitting, setIsSubmitting] = useState(false);
   const navigate = useNavigate();
 

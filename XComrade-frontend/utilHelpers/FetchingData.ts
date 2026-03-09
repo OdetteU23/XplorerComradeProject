@@ -312,14 +312,12 @@ const randomPostAPI = {
   getRandomPosts: async (count: number = 10): Promise<julkaisuWithRelations[]> => {
     return fetchAPI<julkaisuWithRelations[]>(MEDIA_API, `/posts/random?count=${count}`);
   },
-  //Todo: Implementing random posts ENDPOINTS in backend
 };
 const randomUserAPI = {
   // Get random users
   getRandomUsers: async (count: number = 10): Promise<userProfile[]> => {
     return fetchAPI<userProfile[]>(MEDIA_API, `/users/random?count=${count}`);
   },
-  //Todo: Implementing random users ENDPOINTS in backend
 };
 
 
@@ -378,9 +376,9 @@ export const participantAPI = {
 // ==================== MESSAGES ====================
 
 export const messageAPI = {
-  // Get conversations
-  getConversations: async (): Promise<chatMessages[]> => {
-    return fetchAPI<chatMessages[]>(MEDIA_API, '/messages/conversations');
+  // Get conversations (returns list of other-user IDs + last message timestamp)
+  getConversations: async (): Promise<{ otherUserId: number; lastMessageTime: string }[]> => {
+    return fetchAPI<{ otherUserId: number; lastMessageTime: string }[]>(MEDIA_API, '/messages/conversations');
   },
 
   // Get messages with a user
@@ -396,17 +394,15 @@ export const messageAPI = {
     });
   },
 
-  // Mark messages as read (not yet implemented in backend)
+  // Mark messages as read
   markAsRead: async (senderId: number): Promise<MessageResponse> => {
-    // TODO: Implement in backend
-    console.warn('Mark messages as read endpoint not implemented');
     return fetchAPI<MessageResponse>(MEDIA_API, `/messages/${senderId}/read`, {
       method: 'PUT',
     });
   },
 };
 
-// ==================== NOTIFICATIONS ====================
+//  NOTIFICATIONS
 
 export const notificationAPI = {
   // Get all notifications

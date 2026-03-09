@@ -63,7 +63,10 @@ const randomFeedsModel = {
           sukunimi: post.sukunimi,
           profile_picture_url: post.profile_picture_url,
         },
-        kommentit,
+        kommentit: kommentit.map(c => ({
+          ...c,
+          user: { id: c.userId, käyttäjäTunnus: c.käyttäjäTunnus, profile_picture_url: c.profile_picture_url },
+        })),
         tykkäykset,
         media_images,
       } as unknown as julkaisuWithRelations;

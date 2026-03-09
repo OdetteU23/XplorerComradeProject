@@ -1,7 +1,5 @@
 import { Request, Response as ExpressResponse, NextFunction } from 'express';
 import jwt from 'jsonwebtoken';
-//import mediaContentModel from '../api/models/mediaContentModel';
-//import { Response } from '../utils/types/localTypes';
 
 type Response = ExpressResponse< | unknown | undefined>;
 

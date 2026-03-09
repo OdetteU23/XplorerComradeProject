@@ -1,7 +1,6 @@
 import { Request, Response as ExpressResponse, NextFunction } from 'express';
 import jwt from 'jsonwebtoken';
 import userModel from '../api/models/userModel';
-//import { Response } from '../utils/types/localTypes';
 
 type Response = ExpressResponse< | unknown | undefined>;
 

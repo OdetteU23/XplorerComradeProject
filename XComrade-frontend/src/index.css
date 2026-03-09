@@ -17,6 +17,16 @@
 body {
   margin: 0;
   background: url('/ui/xcomradeHomeViewPic.jpg') top center / 100% auto no-repeat fixed #1a1a2e;
+  position: relative;
+}
+
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background: rgba(255, 255, 255, 0.15);
+  pointer-events: none;
+  z-index: 0;
 }
 
 #root {

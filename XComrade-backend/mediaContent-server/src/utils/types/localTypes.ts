@@ -1,5 +1,3 @@
-//import { Response as ExpressResponse } from 'express';
-
 declare module 'express-serve-static-core' {
   interface Request {
     user?: {
@@ -18,7 +16,7 @@ interface PostRow {
   media_type: string;
   Date_ajakohta: string;
   kuvaus: string;
-  list_aktiviteetti: string; // stored as JSON string in SQLite
+  list_aktiviteetti: string;
   luotu: string;
   päivitetty: string;
   user_id: number;
@@ -27,9 +25,5 @@ interface PostRow {
   sukunimi: string;
   profile_picture_url: string;
 }
-
-//type Response = Express.Response;
-
-//type Response = ExpressResponse<unknown | undefined>;
 
 export type { PostRow };

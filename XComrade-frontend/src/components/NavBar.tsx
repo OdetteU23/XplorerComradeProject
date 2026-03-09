@@ -5,10 +5,9 @@ import { useState } from 'react';
 import { FaHome, FaCamera, FaSearch } from "react-icons/fa";
 import { MdExplore, MdOutlineNotificationsNone  } from "react-icons/md";
 import { GiCommercialAirplane, GiWorld } from "react-icons/gi";
-import { FaHeart, FaMessage } from "react-icons/fa6";
+import { FaMessage } from "react-icons/fa6";
 import { IoPerson } from "react-icons/io5";
 import { IoIosLogOut, IoMdSettings } from 'react-icons/io';
-//import { GiWorld } from "react-icons/gi";
 
 // Main navigation bar
 const NavBar = () => {
@@ -92,9 +91,6 @@ const NavBar = () => {
                   </Link>
                   <Link to="/my-trips" onClick={() => setShowUserMenu(false)}>
                     <MdExplore /> My Trips
-                  </Link>
-                  <Link to="/buddy-requests" onClick={() => setShowUserMenu(false)}>
-                    <FaHeart /> Buddy Requests
                   </Link>
                   <Link to="/settings" onClick={() => setShowUserMenu(false)}>
                     <IoMdSettings /> Settings

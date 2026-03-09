@@ -1,7 +1,9 @@
 import express, { Request, Response, Application } from 'express';
+import { createServer } from 'http';
 import cors from 'cors';
 import mediaContentRoutes from './api/routes/mediaContentRoutes';
 import randomFeedsRoutes from './api/routes/randomFeedsRoutes';
+import { createWebSocketServer } from './websocket';
 import './database/db-manipulation'; // Initialize database
 
 const app: Application = express();
@@ -46,15 +48,21 @@ app.use((_req: Request, res: Response) => {
 
 // Start server with automatic port fallback
 const mediaContentServerStarter = (portToTry: number, maxAttempts: number = 10) => {
-  const server = app.listen(portToTry, () => {
+  const httpServer = createServer(app);
+
+  // Attach WebSocket server to the same HTTP server
+  createWebSocketServer(httpServer);
+
+  httpServer.listen(portToTry, () => {
     console.log(`🚀 mediaContent-server is running on port ${portToTry}`);
     console.log(`📍 API available at http://localhost:${portToTry}/api`);
+    console.log(`🔌 WebSocket available at ws://localhost:${portToTry}`);
   });
 
-  server.on('error', (err: NodeJS.ErrnoException) => {
+  httpServer.on('error', (err: NodeJS.ErrnoException) => {
     if (err.code === 'EADDRINUSE') {
       if (maxAttempts > 0) {
-        console.log(`⚠️  Port ${portToTry} is in use, trying port ${portToTry + 1}...`);
+        console.log(`⚠️ Port ${portToTry} is in use, trying port ${portToTry + 1}...`);
         mediaContentServerStarter(portToTry + 1, maxAttempts - 1);
       } else {
         console.error(`❌ Could not find an available port after ${10} attempts`);
