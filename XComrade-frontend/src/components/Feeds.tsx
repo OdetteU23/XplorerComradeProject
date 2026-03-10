@@ -69,7 +69,7 @@ const PostCard = ({ post, onLike, onComment }: PostCardProps) => {
                    transition-all cursor-pointer"
         onClick={() => setShowDetail(true)}
       >
-        {/* Thumbnail – skip for threads without media */}
+        {/* Thumbnail –-> skip for threads without media */}
         {(!isThread || hasMedia) && (
         <div className="relative w-full aspect-[4/3] overflow-hidden bg-black/20">
           <img
@@ -77,7 +77,7 @@ const PostCard = ({ post, onLike, onComment }: PostCardProps) => {
             alt={post.kohde}
             className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
           />
-          {/* Overlay badge: media count */}
+          {/* Overlay badge ==> media count */}
           {mediaImages.length > 1 && (
             <span className="absolute top-2 right-2 bg-black/60 text-white text-xs px-2 py-0.5 rounded-full">
               +{mediaImages.length - 1}
