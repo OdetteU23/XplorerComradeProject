@@ -4,7 +4,7 @@ import { FeedList } from '../components/Feeds';
 import { SearchBar } from '../components/Forms';
 import { UserList } from '../components/Profile';
 import { api } from '../../utilHelpers/FetchingData';
-import { useSearchLikes } from './commentsLikes';
+import { useSearchLikes } from './CommentsLikes';
 import { useNavigate } from 'react-router-dom';
 
 const SearchView = () => {
