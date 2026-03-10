@@ -7,7 +7,7 @@ import { api } from '../../utilHelpers/FetchingData';
 import {HomeAction, HomeState} from '../../utilHelpers/types/localTypes';
 import { GiWorld } from 'react-icons/gi';
 import { IoIosWarning } from 'react-icons/io';
-import { useHomeLikesAndComments } from './commentsLikes';
+import { useHomeLikesAndComments } from './CommentsLikes';
 import { Link, useNavigate } from 'react-router-dom';
 
 const homeInitialState: HomeState = {
