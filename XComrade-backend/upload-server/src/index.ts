@@ -1,5 +1,6 @@
 import express, { Request, Response, Application } from 'express';
 import cors from 'cors';
+import path from 'path';
 import uploadRoutes from './api/routes/uploadRoutes';
 import db from './database/db-manipulation';
 
@@ -43,6 +44,9 @@ app.get('/', (_req: Request, res: Response) => {
 
 // API Routes
 app.use('/api/upload', uploadRoutes);
+
+// Serve generated API documentation
+app.use('/apidocs', express.static(path.join(__dirname, '..', 'apidocs')));
 
 // Error handling middleware
 // eslint-disable-next-line @typescript-eslint/no-unused-vars

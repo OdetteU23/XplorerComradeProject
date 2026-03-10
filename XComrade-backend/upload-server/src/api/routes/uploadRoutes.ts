@@ -16,76 +16,33 @@ const storage = multer.diskStorage({
 
 const uploadMiddleware = multer({ storage }).single('file');
 
+/**
+ * @api {post} /api/upload/upload Upload a file
+ * @apiName UploadFile
+ * @apiGroup Upload
+ * @apiHeader {String} Authorization Bearer token.
+ *
+ * @apiBody {File} file File to upload (multipart/form-data, field name: "file").
+ *
+ * @apiSuccess (201) {String} filename Stored filename.
+ * @apiSuccess (201) {String} mime_type File MIME type.
+ * @apiSuccess (201) {Number} file_size File size in bytes.
+ * @apiError (400) {String} message No file uploaded.
+ */
 router.post('/upload', uploadMiddleware, uploadingFile);
+
+/**
+ * @api {delete} /api/upload/delete/:filename Delete an uploaded file
+ * @apiName DeleteFile
+ * @apiGroup Upload
+ * @apiHeader {String} Authorization Bearer token.
+ *
+ * @apiParam {String} filename Name of the file to delete.
+ *
+ * @apiSuccess {String} message File deleted successfully.
+ * @apiError (404) {String} message File not found.
+ * @apiError (403) {String} message Unauthorized.
+ */
 router.delete('/delete/:filename', OndeletingFile);
 
 export default router;
-
-
-
-
-/*
-import express from 'express';
-import { register, login, getCurrentUser, logout } from '../controllers/uploadController';
-import { authenticateToken } from '../../middleware/auth';
-
-const router = express.Router();
-
-/**
- * @api {post} /api/auth/register Register a new user
- * @apiName Register
- * @apiGroup Authentication
- *
- * @apiBody {String} käyttäjäTunnus Username (unique)
- * @apiBody {String} salasana Password
- * @apiBody {String} etunimi First name
- * @apiBody {String} sukunimi Last name
- * @apiBody {String} sahkoposti Email address (unique)
- * @apiBody {String} [bio] User bio
- * @apiBody {String} [location] User location
- *
- * @apiSuccess {String} message Success message
- * @apiSuccess {String} token JWT authentication token
- * @apiSuccess {Object} user User profile object
- */
-/*router.post('/register', register);
-
-/**
- * @api {post} /api/auth/login Login user
- * @apiName Login
- * @apiGroup Authentication
- *
- * @apiBody {String} käyttäjäTunnus Username
- * @apiBody {String} salasana Password
- *
- * @apiSuccess {String} message Success message
- * @apiSuccess {String} token JWT authentication token
- * @apiSuccess {Object} user User profile object
- */
-/*router.post('/login', login);
-
-/*
-
-/**
- * @api {get} /api/auth/me Get current user
- * @apiName GetCurrentUser
- * @apiGroup Authentication
- * @apiHeader {String} Authorization Bearer token
- *
- * @apiSuccess {Object} user Current user profile object
- */
-/* router.get('/me', authenticateToken, getCurrentUser);
-*/
-/*
-/**
- * @api {post} /api/auth/logout Logout user
- * @apiName Logout
- * @apiGroup Authentication
- *
- * @apiSuccess {String} message Success message
- */
-/*
-router.post('/logout', logout);
-
-export default router;
-*/

@@ -1,5 +1,6 @@
 import express, { Request, Response, Application } from 'express';
 import cors from 'cors';
+import path from 'path';
 import authRoutes from './api/routes/authRoutes';
 import userRoutes from './api/routes/userRoutes';
 import './database/db-manipulation'; // Initialize database
@@ -27,6 +28,9 @@ app.get('/', (_req: Request, res: Response) => {
 // API Routes
 app.use('/api/auth', authRoutes);
 app.use('/api/users', userRoutes);
+
+// Serve generated API documentation
+app.use('/apidocs', express.static(path.join(__dirname, '..', 'apidocs')));
 
 // Error handling middleware
 // eslint-disable-next-line @typescript-eslint/no-unused-vars

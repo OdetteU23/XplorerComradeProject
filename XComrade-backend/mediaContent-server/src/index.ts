@@ -1,6 +1,7 @@
 import express, { Request, Response, Application } from 'express';
 import { createServer } from 'http';
 import cors from 'cors';
+import path from 'path';
 import mediaContentRoutes from './api/routes/mediaContentRoutes';
 import randomFeedsRoutes from './api/routes/randomFeedsRoutes';
 import { createWebSocketServer } from './websocket';
@@ -30,6 +31,9 @@ app.get('/', (_req: Request, res: Response) => {
 // so /posts/random matches before /posts/:id
 app.use('/api', randomFeedsRoutes);
 app.use('/api', mediaContentRoutes);
+
+// Serving API documentation
+app.use('/apidocs', express.static(path.join(__dirname, '..', 'apidocs')));
 
 // Error handling middleware
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
