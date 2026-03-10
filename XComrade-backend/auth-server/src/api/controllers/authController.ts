@@ -3,6 +3,7 @@ import bcrypt from 'bcryptjs';
 import type { loginInfo, registeringInfo } from '@xcomrade/types-server';
 import userModel from '../models/userModel';
 import { generateToken } from '../../middleware/auth';
+import {UserRow} from '../../utils/types/localTypes';
 
 // Register new user
 export const register = async (req: Request, res: Response): Promise<void> => {
@@ -17,14 +18,14 @@ export const register = async (req: Request, res: Response): Promise<void> => {
     }
 
     // Check if username already exists
-    const existingUsername = userModel.findByUsername(userData.käyttäjäTunnus);
+    const existingUsername: UserRow | undefined = userModel.findByUsername(userData.käyttäjäTunnus);
     if (existingUsername) {
       res.status(409).json({ message: 'Username already exists' });
       return;
     }
 
     // Check if email already exists
-    const existingEmail = userModel.findByEmail(userData.sahkoposti);
+    const existingEmail: UserRow | undefined = userModel.findByEmail(userData.sahkoposti);
     if (existingEmail) {
       res.status(409).json({ message: 'Email already registered' });
       return;
@@ -102,7 +103,7 @@ export const login = async (req: Request, res: Response): Promise<void> => {
 export const getCurrentUser = async (req: Request, res: Response): Promise<void> => {
   try {
     // req.user is set by authenticateToken middleware
-    if (!req.user) {
+    if (!req || !req.user) {
       res.status(401).json({ message: 'Not authenticated' });
       return;
     }
