@@ -1,7 +1,9 @@
 import fs from 'fs';
+import path from 'path';
 import { UploadMessage } from '../../utils/types/localTypes';
 import { Request, Response, NextFunction } from 'express';
 import CustomError from '../../classes/CustomErrors';
+import db from '../../database/db-manipulation';
 
 const UPLOAD_DIR = './uploads';
 
@@ -10,6 +12,13 @@ const uploadingFile = (req: Request, res: Response, next: NextFunction) => {
         if (!req.file) {
             return res.status(400).json({ message: 'No file uploaded' });
         }
+
+        // Persist file data in the database so images survive branch switches
+        const filePath = path.join(UPLOAD_DIR, req.file.filename);
+        const fileBuffer = fs.readFileSync(filePath);
+        db.prepare(
+          'INSERT OR REPLACE INTO file_storage (filename, mime_type, file_data) VALUES (?, ?, ?)'
+        ).run(req.file.filename, req.file.mimetype, fileBuffer);
 
         const response: UploadMessage = {
             message: 'File uploaded successfully',

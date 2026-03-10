@@ -140,6 +140,15 @@ CREATE TABLE IF NOT EXISTS media_images (
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (julkaisuId) REFERENCES julkaisu(id) ON DELETE CASCADE
 );
+
+-- File storage table (persists upload data in DB so images survive branch switches)
+CREATE TABLE IF NOT EXISTS file_storage (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    filename VARCHAR(255) UNIQUE NOT NULL,
+    mime_type VARCHAR(100) NOT NULL,
+    file_data BLOB NOT NULL,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+);
 `;
 
 const checkData = `SELECT COUNT(*) AS count FROM käyttäjä`;

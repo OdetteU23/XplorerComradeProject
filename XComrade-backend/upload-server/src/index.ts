@@ -1,7 +1,7 @@
 import express, { Request, Response, Application } from 'express';
 import cors from 'cors';
 import uploadRoutes from './api/routes/uploadRoutes';
-import './database/db-manipulation';
+import db from './database/db-manipulation';
 
 const app: Application = express();
 const DEFAULT_PORT = 3002;
@@ -15,8 +15,23 @@ app.use(cors({
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// Serve uploaded files as static assets
+// Serve uploaded files as static assets (disk first, then DB fallback)
 app.use('/uploads', express.static('uploads'));
+
+// Fallback: serve from DB when the file is missing from disk
+app.get('/uploads/:filename', (req: Request, res: Response) => {
+  const row = db
+    .prepare('SELECT mime_type, file_data FROM file_storage WHERE filename = ?')
+    .get(req.params.filename) as { mime_type: string; file_data: Buffer } | undefined;
+
+  if (!row) {
+    return res.status(404).json({ message: 'File not found' });
+  }
+
+  res.setHeader('Content-Type', row.mime_type);
+  res.setHeader('Cache-Control', 'public, max-age=86400');
+  res.send(row.file_data);
+});
 
 // Routes
 app.get('/', (_req: Request, res: Response) => {
