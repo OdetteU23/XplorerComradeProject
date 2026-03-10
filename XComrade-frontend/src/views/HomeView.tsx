@@ -156,7 +156,7 @@ const HomeView = () => {
         <section className="mb-10">
           {!isAuthenticated && (
             <div className="text-center py-12 px-8 bg-white/[0.04] border border-dashed border-white/15 rounded-2xl">
-              <h4 className="text-lg font-semibold text-white mb-2">Register/Login to discover travel content from people you follow!</h4>
+              <h4 className="text-lg font-semibold text-white mb-2">Register/Login to discover different interesting traveling related contents!</h4>
             </div>
           )}
           {visiblePosts.length === 0 ? (
@@ -189,7 +189,7 @@ const HomeView = () => {
             <h3 className="text-base font-bold text-white/90 mb-4">Travelers you might like</h3>
             <UserList
               users={visibleSuggestedUsers}
-              title="Suggested Users"
+              title=""
               emptyMessage="No suggestions available."
               onUserClick={(userId) => navigate(`/profile/${userId}`)}
             />
