@@ -7,5 +7,5 @@
     "strict": true,
     "esModuleInterop": true
   },
-  "include": ["src", "test", "eslint.config.mjs"]
+  "include": ["auth-server/src", "mediaContent-server/src", "upload-server/src", "eslint.config.mjs"]
 }

@@ -122,6 +122,8 @@ const postContentsModel = {
       params.push(list_aktiviteetti);
     }
 
+    if (updates.length === 0) return null;
+
     params.push(julkaisuId);
     const stmt = db.prepare(`
       UPDATE julkaisu

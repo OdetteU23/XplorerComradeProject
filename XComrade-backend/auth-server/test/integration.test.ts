@@ -1,4 +1,14 @@
-/*
+jest.mock('../src/database/db-manipulation', () => {
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
+  const Database = require('better-sqlite3');
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
+  const { tables } = require('../src/database/db-config');
+  const db = new Database(':memory:');
+  db.pragma('journal_mode = WAL');
+  db.exec(tables);
+  return { __esModule: true, default: db };
+});
+
 import request from 'supertest';
 import express, { Application } from 'express';
 import authRoutes from '../src/api/routes/authRoutes';
@@ -217,4 +227,3 @@ describe('Authentication API Integration Tests', () => {
     });
   });
 });
-*/

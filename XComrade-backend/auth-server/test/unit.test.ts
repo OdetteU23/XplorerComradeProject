@@ -1,163 +1,168 @@
-/*
+jest.mock('../src/database/db-manipulation', () => {
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
+  const Database = require('better-sqlite3');
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
+  const { tables } = require('../src/database/db-config');
+  const db = new Database(':memory:');
+  db.pragma('journal_mode = WAL');
+  db.exec(tables);
+  return { __esModule: true, default: db };
+});
+
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
-import { generateToken } from '../src/middleware/auth';
 import userModel from '../src/api/models/userModel';
-import db from '../src/database/db-manipulation';
-import type { registeringInfo } from '@xcomrade/types-server';
+import { generateToken } from '../src/middleware/auth';
 
-describe('Authentication Unit Tests', () => {
-  // Clean up database before each test
-  beforeEach(() => {
-    db.prepare('DELETE FROM käyttäjä').run();
+// eslint-disable-next-line @typescript-eslint/no-require-imports
+const mockDb = require('../src/database/db-manipulation').default;
+
+const BASE_USER = {
+  käyttäjäTunnus: 'testuser',
+  salasana: 'hashed_password',
+  etunimi: 'Test',
+  sukunimi: 'User',
+  sahkoposti: 'test@example.com',
+};
+
+afterEach(() => {
+  mockDb.exec('DELETE FROM seuranta');
+  mockDb.exec('DELETE FROM julkaisu');
+  mockDb.exec('DELETE FROM käyttäjä');
+});
+
+describe('userModel.create', () => {
+  it('inserts a user and returns the row', () => {
+    const user = userModel.create(BASE_USER);
+    expect(user.id).toBeGreaterThan(0);
+    expect(user.käyttäjäTunnus).toBe('testuser');
   });
 
-  afterAll(() => {
-    db.close();
+  it('throws on duplicate käyttäjäTunnus', () => {
+    userModel.create(BASE_USER);
+    expect(() => userModel.create(BASE_USER)).toThrow();
   });
 
-  describe('Password Hashing', () => {
-    it('should hash password correctly', async () => {
-      const password = 'testPassword123';
-      const hashedPassword = await bcrypt.hash(password, 10);
-
-      expect(hashedPassword).not.toBe(password);
-      expect(hashedPassword.length).toBeGreaterThan(50);
-    });
-
-    it('should verify correct password', async () => {
-      const password = 'testPassword123';
-      const hashedPassword = await bcrypt.hash(password, 10);
-
-      const isValid = await bcrypt.compare(password, hashedPassword);
-      expect(isValid).toBe(true);
-    });
-
-    it('should reject incorrect password', async () => {
-      const password = 'testPassword123';
-      const wrongPassword = 'wrongPassword';
-      const hashedPassword = await bcrypt.hash(password, 10);
-
-      const isValid = await bcrypt.compare(wrongPassword, hashedPassword);
-      expect(isValid).toBe(false);
-    });
-  });
-
-  describe('JWT Token Generation', () => {
-    it('should generate valid JWT token', () => {
-      const userId = 1;
-      const username = 'testuser';
-
-      const token = generateToken(userId, username);
-
-      expect(token).toBeDefined();
-      expect(typeof token).toBe('string');
-      expect(token.split('.')).toHaveLength(3); // JWT has 3 parts
-    });
-
-    it('should decode token with correct payload', () => {
-      const userId = 1;
-      const username = 'testuser';
-
-      const token = generateToken(userId, username);
-      const decoded = jwt.decode(token) as { id: number; username: string };
-
-      expect(decoded.id).toBe(userId);
-      expect(decoded.username).toBe(username);
-    });
-  });
-
-  describe('User Model', () => {
-    const testUser: registeringInfo = {
-      käyttäjäTunnus: 'testuser',
-      salasana: 'hashedPassword123',
-      etunimi: 'Test',
-      sukunimi: 'User',
-      sahkoposti: 'test@example.com',
-      bio: 'Test bio',
-      location: 'Test City',
-    };
-
-    it('should create a new user', () => {
-      const user = userModel.create(testUser);
-
-      expect(user.id).toBeDefined();
-      expect(user.käyttäjäTunnus).toBe(testUser.käyttäjäTunnus);
-      expect(user.etunimi).toBe(testUser.etunimi);
-      expect(user.sahkoposti).toBe(testUser.sahkoposti);
-    });
-
-    it('should find user by username', () => {
-      userModel.create(testUser);
-
-      const found = userModel.findByUsername('testuser');
-
-      expect(found).toBeDefined();
-      expect(found?.käyttäjäTunnus).toBe('testuser');
-    });
-
-    it('should find user by email', () => {
-      userModel.create(testUser);
-
-      const found = userModel.findByEmail('test@example.com');
-
-      expect(found).toBeDefined();
-      expect(found?.sahkoposti).toBe('test@example.com');
-    });
-
-    it('should return undefined for non-existent user', () => {
-      const found = userModel.findByUsername('nonexistent');
-
-      expect(found).toBeUndefined();
-    });
-
-    it('should convert user row to user profile (without password)', () => {
-      const user = userModel.create(testUser);
-      const profile = userModel.toUserProfile(user);
-
-      expect(profile).toBeDefined();
-      expect(profile.id).toBe(user.id);
-      //eslint-disable-next-line @typescript-eslint/no-explicit-any
-      expect((profile as any).salasana).toBeUndefined();
-    });
-
-    it('should search users by query', () => {
-      userModel.create(testUser);
-      userModel.create({
-        ...testUser,
-        käyttäjäTunnus: 'anotheruser',
-        sahkoposti: 'another@example.com',
-        etunimi: 'Another',
-      });
-
-      const results = userModel.searchUsers('test');
-
-      expect(results.length).toBeGreaterThan(0);
-      expect(results.some(u => u.käyttäjäTunnus === 'testuser')).toBe(true);
-    });
-
-    it('should update user profile', () => {
-      const user = userModel.create(testUser);
-
-      const updated = userModel.update(user.id, {
-        bio: 'Updated bio',
-        location: 'New City',
-      });
-
-      expect(updated).toBeDefined();
-      expect(updated?.bio).toBe('Updated bio');
-      expect(updated?.location).toBe('New City');
-    });
-
-    it('should get user stats', () => {
-      const user = userModel.create(testUser);
-      const stats = userModel.getUserStats(user.id);
-
-      expect(stats).toBeDefined();
-      expect(stats.postsCount).toBe(0);
-      expect(stats.followersCount).toBe(0);
-      expect(stats.followingCount).toBe(0);
-    });
+  it('throws on duplicate sahkoposti', () => {
+    userModel.create(BASE_USER);
+    expect(() => userModel.create({ ...BASE_USER, käyttäjäTunnus: 'other' })).toThrow();
   });
 });
-*/
+
+describe('userModel.findByUsername', () => {
+  it('returns the user for an existing username', () => {
+    userModel.create(BASE_USER);
+    const found = userModel.findByUsername('testuser');
+    expect(found).toBeDefined();
+    expect(found!.sahkoposti).toBe('test@example.com');
+  });
+
+  it('returns undefined for an unknown username', () => {
+    expect(userModel.findByUsername('nobody')).toBeUndefined();
+  });
+});
+
+describe('userModel.findByEmail', () => {
+  it('returns the user for an existing email', () => {
+    userModel.create(BASE_USER);
+    expect(userModel.findByEmail('test@example.com')).toBeDefined();
+  });
+
+  it('returns undefined for an unknown email', () => {
+    expect(userModel.findByEmail('ghost@example.com')).toBeUndefined();
+  });
+});
+
+describe('userModel.findById', () => {
+  it('returns the user for a valid id', () => {
+    const created = userModel.create(BASE_USER);
+    expect(userModel.findById(created.id)).toBeDefined();
+  });
+
+  it('returns undefined for an unknown id', () => {
+    expect(userModel.findById(99999)).toBeUndefined();
+  });
+});
+
+describe('userModel.toUserProfile', () => {
+  it('strips salasana from the row', () => {
+    const created = userModel.create(BASE_USER);
+    const profile = userModel.toUserProfile(created);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    expect((profile as any).salasana).toBeUndefined();
+    expect(profile.id).toBe(created.id);
+    expect(profile.käyttäjäTunnus).toBe('testuser');
+  });
+});
+
+describe('userModel.update', () => {
+  it('updates bio and location', () => {
+    const created = userModel.create(BASE_USER);
+    const updated = userModel.update(created.id, { bio: 'Hello', location: 'Helsinki' });
+    expect(updated!.bio).toBe('Hello');
+    expect(updated!.location).toBe('Helsinki');
+  });
+
+  it('returns undefined for a non-existent id', () => {
+    expect(userModel.update(99999, { bio: 'x' })).toBeUndefined();
+  });
+
+  it('returns unchanged user when no valid fields are provided', () => {
+    const created = userModel.create(BASE_USER);
+    const result = userModel.update(created.id, {});
+    expect(result!.id).toBe(created.id);
+  });
+});
+
+describe('userModel.getUserStats', () => {
+  it('returns zero counts for a fresh user', () => {
+    const created = userModel.create(BASE_USER);
+    const stats = userModel.getUserStats(created.id);
+    expect(stats.postsCount).toBe(0);
+    expect(stats.followersCount).toBe(0);
+    expect(stats.followingCount).toBe(0);
+  });
+});
+
+describe('userModel.searchUsers', () => {
+  it('finds users by partial username match', () => {
+    userModel.create(BASE_USER);
+    const results = userModel.searchUsers('test');
+    expect(results.length).toBeGreaterThan(0);
+    expect(results[0].käyttäjäTunnus).toBe('testuser');
+  });
+
+  it('returns empty array when no match', () => {
+    userModel.create(BASE_USER);
+    expect(userModel.searchUsers('zzznomatch')).toHaveLength(0);
+  });
+});
+
+describe('generateToken', () => {
+  it('returns a signed JWT string', () => {
+    const token = generateToken(1, 'alice');
+    expect(typeof token).toBe('string');
+    const decoded = jwt.decode(token) as Record<string, unknown>;
+    expect(decoded['id']).toBe(1);
+    expect(decoded['käyttäjäTunnus']).toBe('alice');
+  });
+
+  it('expires in 7 days', () => {
+    const token = generateToken(1, 'alice');
+    const decoded = jwt.decode(token) as Record<string, number>;
+    expect(decoded['exp'] - decoded['iat']).toBe(7 * 24 * 60 * 60);
+  });
+});
+
+describe('bcrypt password hashing', () => {
+  it('hashes and verifies a correct password', async () => {
+    const hash = await bcrypt.hash('mysecret', 10);
+    await expect(bcrypt.compare('mysecret', hash)).resolves.toBe(true);
+  });
+
+  it('rejects an incorrect password', async () => {
+    const hash = await bcrypt.hash('correct', 10);
+    await expect(bcrypt.compare('wrong', hash)).resolves.toBe(false);
+  });
+});
+

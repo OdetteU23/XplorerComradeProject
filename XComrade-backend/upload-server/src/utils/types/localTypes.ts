@@ -16,5 +16,17 @@ type UploadMessage =  {
     screenshots: string[];
   };
 };
+type UserRow = {
+  id: number;
+  käyttäjäTunnus: string;
+  salasana: string;
+  etunimi: string;
+  sukunimi: string;
+  sahkoposti: string;
+  profile_picture_url?: string | null;
+  bio?: string | null;
+  location?: string | null;
+  created_at: string;
+}
 
-export type { UploadMessage };
+export type { UploadMessage, UserRow };

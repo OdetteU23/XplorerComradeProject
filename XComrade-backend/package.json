@@ -4,14 +4,12 @@
   "description": "XplorerComrade app's Backend API development Server",
   "main": "dist/index.js",
   "scripts": {
-    "dev": "nodemon src/index.ts",
-    "build": "tsc -b && vite build",
-    "start": "node dist/index.js",
+    "dev:auth": "cd auth-server && nodemon src/index.ts",
+    "dev:media": "cd mediaContent-server && nodemon src/index.ts",
+    "dev:upload": "cd upload-server && nodemon src/index.ts",
+    "build": "tsc -b",
     "test": "jest --config jest.config.cjs",
-    "lint": "eslint .",
-    "preview": "jest --config jest.config.cjs preview",
-    "test:unit": "jest --config jest.config.cjs",
-    "test:component": "jest --config jest.config.cjs src/components"
+    "lint": "eslint ."
   },
   "dependencies": {
     "@eslint/js": "^9.39.2",
