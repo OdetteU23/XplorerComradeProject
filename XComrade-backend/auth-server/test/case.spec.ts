@@ -1,5 +1,5 @@
 import { add } from '../src/utils/helper';
-
+// Simple unit test for the add function
 describe('add()', () => {
   it('adds two positive numbers', () => {
     expect(add(2, 3)).toBe(5);
