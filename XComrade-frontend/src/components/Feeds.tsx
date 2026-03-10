@@ -6,6 +6,7 @@ import { CiHeart } from 'react-icons/ci';
 import { FaHeart, FaRegComment } from 'react-icons/fa';
 import { toContentItem, toThreadItem } from '../../utilHelpers/contentMappers';
 import { useKäyttäjä } from '../content/käyttänKontentti';
+import { useLikeStore } from '../hooks/store';
 import { CommentSection } from './Comments&Likes';
 import {FeedListProps, PostCardProps, PostFormProps} from '../../utilHelpers/types/localTypes';
 import { DEFAULT_AVATAR, PLACEHOLDER_IMG } from '../../utilHelpers/constants';
@@ -25,9 +26,10 @@ const PostCard = ({ post, onLike, onComment }: PostCardProps) => {
   const navigate = useNavigate();
   const { user: currentUser } = useKäyttäjä();
 
-  // Defensive defaults for missing relations
+  // Read likes from Zustand store for immediate optimistic updates
+  const storeLikes = useLikeStore((s) => s.likesByPost[post.id]);
   const kommentit = post.kommentit ?? [];
-  const tykkäykset = post.tykkäykset ?? [];
+  const tykkäykset = storeLikes ?? post.tykkäykset ?? [];
   const mediaImages = post.media_images ?? [];
   const isLiked = tykkäykset.some(like => like.userId === currentUser?.id);
 
