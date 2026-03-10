@@ -1,26 +1,21 @@
 # This workflow builds and type-checks the Node.js project on push to test-env,
-# and deploys it to Azure Function Apps when a commit is pushed to main.
+# and deploys it to Azure Web Apps (App Service) via manual trigger.
 #
-# This workflow assumes you have already created the target Azure Functions app(s).
+# This workflow assumes you have already created the target Azure Web Apps.
 # For instructions see:
-#   - https://learn.microsoft.com/en-us/azure/azure-functions/create-first-function-vs-code-node
-#   - https://learn.microsoft.com/en-us/azure/azure-functions/create-first-function-vs-code-typescript
+#   - https://learn.microsoft.com/en-us/azure/app-service/quickstart-nodejs
 #
 # To configure this workflow:
 # 1. Set up the following secrets in your repository:
-#   - AZURE_FUNCTIONAPP_PUBLISH_PROFILE_AUTH
-#   - AZURE_FUNCTIONAPP_PUBLISH_PROFILE_MEDIA
-#   - AZURE_FUNCTIONAPP_PUBLISH_PROFILE_UPLOAD
+#   - AZURE_WEBAPP_PUBLISH_PROFILE_AUTH
+#   - AZURE_WEBAPP_PUBLISH_PROFILE_MEDIA
+#   - AZURE_WEBAPP_PUBLISH_PROFILE_UPLOAD
 # 2. Change the env variables below for your configuration.
 #
 # For more information on:
 #   - GitHub Actions for Azure: https://github.com/Azure/Actions
-#   - Azure Functions Action: https://github.com/Azure/functions-action
-#   - Publish Profile: https://github.com/Azure/functions-action#using-publish-profile-as-deployment-credential-recommended
-#   - Azure Service Principal for RBAC: https://github.com/Azure/functions-action#using-azure-service-principal-for-rbac-as-deployment-credential
-#
-# For more samples to get started with GitHub Action workflows to deploy to Azure:
-#   https://github.com/Azure/actions-workflow-samples/tree/master/FunctionApp
+#   - Azure Web Apps Deploy: https://github.com/Azure/webapps-deploy
+#   - Publish Profile: https://github.com/Azure/webapps-deploy#using-publish-profile
 
 # Flow:
 #   1. Push to test-env  -→  CI runs (type-check, lint, tests)
@@ -28,7 +23,7 @@
 #   3. Push to main       -→  CI re-runs to validate merged code
 #   4. Manual trigger     -→  deploy to Azure (Actions tab → Run workflow)
 
-name: Deploy Node.js project to Azure Function App
+name: CI/CD — Build, Test & Deploy to Azure
 
 on:
   push:
@@ -52,10 +47,10 @@ on:
 
 env:
   NODE_VERSION: '20.x'
-  # TODO: Replacing these with the actual Azure Function App names
-  AZURE_FUNCTIONAPP_NAME_AUTH: 'xplorercomrade-auth'
-  AZURE_FUNCTIONAPP_NAME_MEDIA: 'xplorercomrade-media'
-  AZURE_FUNCTIONAPP_NAME_UPLOAD: 'xplorercomrade-upload'
+  # Azure Web App names — must match the apps created in Azure Portal
+  AZURE_WEBAPP_NAME_AUTH: 'XComrade-auth'
+  AZURE_WEBAPP_NAME_MEDIA: 'XComrade-mediaContent'
+  AZURE_WEBAPP_NAME_UPLOAD: 'XComrade-upload'
 
 jobs:
   # --------------->
@@ -153,7 +148,7 @@ jobs:
         #  echo "All CI checks passed —-> safe to merge to main"
 
   # -------->
-  # Deploy to Azure Function Apps ==> ONLY on manual trigger (workflow_dispatch)
+  # Deploy to Azure Web Apps ==> ONLY on manual trigger (workflow_dispatch)
   # To deploy: GitHub repo → Actions tab → select this workflow → Run workflow
   # -------->
   deploy:
@@ -185,11 +180,11 @@ jobs:
 
       - name: Deploy auth-server
         if: inputs.deploy_target == 'all' || inputs.deploy_target == 'auth-server'
-        uses: Azure/functions-action@v1
+        uses: Azure/webapps-deploy@v3
         with:
-          app-name: ${{ env.AZURE_FUNCTIONAPP_NAME_AUTH }}
+          app-name: ${{ env.AZURE_WEBAPP_NAME_AUTH }}
           package: XComrade-backend/auth-server
-          publish-profile: ${{ secrets.AZURE_FUNCTIONAPP_PUBLISH_PROFILE_AUTH }}
+          publish-profile: ${{ secrets.AZURE_WEBAPP_PUBLISH_PROFILE_AUTH }}
 
       # ──> Build & Deploy mediaContent-server
       - name: Build mediaContent-server
@@ -201,11 +196,11 @@ jobs:
 
       - name: Deploy mediaContent-server
         if: inputs.deploy_target == 'all' || inputs.deploy_target == 'mediaContent-server'
-        uses: Azure/functions-action@v1
+        uses: Azure/webapps-deploy@v3
         with:
-          app-name: ${{ env.AZURE_FUNCTIONAPP_NAME_MEDIA }}
+          app-name: ${{ env.AZURE_WEBAPP_NAME_MEDIA }}
           package: XComrade-backend/mediaContent-server
-          publish-profile: ${{ secrets.AZURE_FUNCTIONAPP_PUBLISH_PROFILE_MEDIA }}
+          publish-profile: ${{ secrets.AZURE_WEBAPP_PUBLISH_PROFILE_MEDIA }}
 
       # ──> Build & Deploy upload-server
       - name: Build upload-server
@@ -217,8 +212,8 @@ jobs:
 
       - name: Deploy upload-server
         if: inputs.deploy_target == 'all' || inputs.deploy_target == 'upload-server'
-        uses: Azure/functions-action@v1
+        uses: Azure/webapps-deploy@v3
         with:
-          app-name: ${{ env.AZURE_FUNCTIONAPP_NAME_UPLOAD }}
+          app-name: ${{ env.AZURE_WEBAPP_NAME_UPLOAD }}
           package: XComrade-backend/upload-server
-          publish-profile: ${{ secrets.AZURE_FUNCTIONAPP_PUBLISH_PROFILE_UPLOAD }}
+          publish-profile: ${{ secrets.AZURE_WEBAPP_PUBLISH_PROFILE_UPLOAD }}

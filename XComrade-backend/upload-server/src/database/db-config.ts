@@ -1,7 +1,9 @@
 import path from 'path';
 
-// Shared database file — all servers use the same XComrade.sqlite at the backend root
-const filename = path.join(__dirname, '..', '..', '..', 'XComrade.sqlite');
+// Shared database file — all servers use the same XComrade.sqlite
+// On Azure: set DB_PATH=/data/XComrade.sqlite (Azure Files mount)
+// Locally: defaults to the backend root
+const filename = process.env.DB_PATH || path.join(__dirname, '..', '..', '..', 'XComrade.sqlite');
 
 const tables = `
 -- Users table (käyttäjä)

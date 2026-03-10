@@ -8,11 +8,9 @@ A multi-server Express.js backend for the XplorerComrade travel companion app. B
 
 | Server | URL |
 |--------|-----|
-| **auth-server** | `https://xplorercomrade-auth.azurewebsites.net/api` |
-| **mediaContent-server** | `https://xplorercomrade-media.azurewebsites.net/api` |
-| **upload-server** | `https://xplorercomrade-upload.azurewebsites.net/api` |
-
-> Replacing the URLs above with the actual Azure App Service URLs once deployed.
+| **auth-server** | `https://xcomrade-auth.azurewebsites.net/api` |
+| **mediaContent-server** | `https://xcomrade-mediacontent.azurewebsites.net/api` |
+| **upload-server** | `https://xcomrade-upload.azurewebsites.net/api` |
 
 ---
 
@@ -22,9 +20,9 @@ Interactive HTML documentation generated with [apiDoc](https://apidocjs.com/). E
 
 | Server | API Docs URL |
 |--------|--------------|
-| **auth-server** | `https://xplorercomrade-auth.azurewebsites.net/apidocs` |
-| **mediaContent-server** | `https://xplorercomrade-media.azurewebsites.net/apidocs` |
-| **upload-server** | `https://xplorercomrade-upload.azurewebsites.net/apidocs` |
+| **auth-server** | `https://xcomrade-auth.azurewebsites.net/apidocs` |
+| **mediaContent-server** | `https://xcomrade-mediacontent.azurewebsites.net/apidocs` |
+| **upload-server** | `https://xcomrade-upload.azurewebsites.net/apidocs` |
 
 **Local development:**
 - auth-server: http://localhost:3000/apidocs
@@ -47,7 +45,7 @@ All three servers share a single **SQLite** database file (`XComrade.sqlite`) us
 ### ER Diagram
 
 ![ER Diagram](ER_Diagram.png)
-### FK ---> Foreign Key
+  -  FK ---> Foreign Key
 
 ### Tables Summary
 
