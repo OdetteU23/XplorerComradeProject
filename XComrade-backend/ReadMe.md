@@ -46,8 +46,7 @@ All three servers share a single **SQLite** database file (`XComrade.sqlite`) us
 
 ### ER Diagram
 
-```
-![alt text](image.png)
+![ER Diagram](ER_Diagram.png)
 
 ### Tables Summary
 
