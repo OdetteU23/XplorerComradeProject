@@ -17,7 +17,7 @@
     "@types/cors": "^2.8.19",
     "@types/jsonwebtoken": "^9.0.10",
     "@vitejs/plugin-react-swc": "^4.2.2",
-    "@xcomrade/types-server": "file:../XplorerComrade-hybrid-types-server",
+    "@xcomrade/types-server": "file:../XComrade-hybrid-types",
     "apidoc": "^1.2.0",
     "bcryptjs": "^3.0.3",
     "better-sqlite3": "^12.6.2",

@@ -13,7 +13,9 @@ const port = process.env.PORT ? parseInt(process.env.PORT) : DEFAULT_PORT;
 
 // Middleware
 app.use(cors({
-  origin: ['http://localhost:5173', 'http://localhost:5174'],
+  origin: process.env.CORS_ORIGIN
+    ? process.env.CORS_ORIGIN.split(',')
+    : ['http://localhost:5173', 'http://localhost:5174'],
   credentials: true,
 }));
 app.use(express.json());
