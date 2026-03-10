@@ -1,9 +1,16 @@
-/*
-import {add} from '../src/utils/helper';
+import { add } from '../src/utils/helper';
+// Simple unit test for the add function
+describe('add()', () => {
+  it('adds two positive numbers', () => {
+    expect(add(2, 3)).toBe(5);
+  });
 
-describe('add function', () => {
-    it('should correctly add two numbers', () => {
-        expect(add(2, 3)).toBe(5);
-    });
+  it('handles zero', () => {
+    expect(add(0, 0)).toBe(0);
+  });
+
+  it('handles negative numbers', () => {
+    expect(add(-2, 3)).toBe(1);
+  });
 });
-*/
+

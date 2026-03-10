@@ -5,29 +5,17 @@ import { useNavigate, useLocation } from 'react-router';
 import { TravelPlanList, TravelPlanForm } from '../components/TravelPlans';
 import { SearchBar, FilterBar } from '../components/Forms';
 import { api } from '../../utilHelpers/FetchingData';
+import { useKäyttäjä } from '../content/käyttänKontentti';
 import { GiWorld } from "react-icons/gi";
 import { FaCalendarAlt } from 'react-icons/fa';
 import { RiArrowGoBackLine } from 'react-icons/ri';
-
-/** Safely convert a value that may be a JSON string or already an array into a string[] */
-const toArray = (value: unknown): string[] => {
-  if (Array.isArray(value)) return value;
-  if (typeof value === 'string') {
-    try {
-      const parsed = JSON.parse(value);
-      return Array.isArray(parsed) ? parsed : [];
-    } catch {
-      return value.trim() ? [value] : [];
-    }
-  }
-  return [];
-};
-
-const DEFAULT_AVATAR = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ccircle cx='50' cy='50' r='50' fill='%23555'/%3E%3Ccircle cx='50' cy='38' r='18' fill='%23888'/%3E%3Cellipse cx='50' cy='80' rx='30' ry='22' fill='%23888'/%3E%3C/svg%3E";
+import { DEFAULT_AVATAR, toArray } from '../../utilHelpers/constants';
 
 const TravelPlansView = () => {
   const navigate = useNavigate();
+  const { user: currentUser } = useKäyttäjä();
   const [travelPlans, setTravelPlans] = useState<TravelPlanWithUser[]>([]);
+  const [allTravelPlans, setAllTravelPlans] = useState<TravelPlanWithUser[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<'published' | 'create'>('published');
 
@@ -39,7 +27,9 @@ const TravelPlansView = () => {
     try {
       setIsLoading(true);
       const plans = await api.travelPlan.getTravelPlans();
-      setTravelPlans(plans as unknown as TravelPlanWithUser[]);
+      const fetched = plans as unknown as TravelPlanWithUser[];
+      setAllTravelPlans(fetched);
+      setTravelPlans(fetched);
     } catch (err) {
       console.error('Load travel plans error:', err);
     } finally {
@@ -88,9 +78,29 @@ const TravelPlansView = () => {
     }
   };
 
-  const handleFilter = (filters: any) => {
-    console.log('Applying filters:', filters);
-    // TODO: Apply filters to travel plans (Todo: Implement API support for filtering or filter client-side in the backend)
+  const handleFilter = (filters: { destination?: string; activities?: string[]; dateRange?: { start?: Date; end?: Date } }) => {
+    let filtered = allTravelPlans;
+
+    if (filters.destination?.trim()) {
+      const dest = filters.destination.toLowerCase();
+      filtered = filtered.filter(p => p.kohde?.toLowerCase().includes(dest));
+    }
+
+    if (filters.activities && filters.activities.length > 0) {
+      filtered = filtered.filter(p => {
+        const planActivities = toArray(p.aktiviteetit).map(a => a.toLowerCase());
+        return filters.activities!.some(a => planActivities.includes(a.toLowerCase()));
+      });
+    }
+
+    if (filters.dateRange?.start) {
+      filtered = filtered.filter(p => new Date(p.suunniteltu_alku_pvm) >= filters.dateRange!.start!);
+    }
+    if (filters.dateRange?.end) {
+      filtered = filtered.filter(p => new Date(p.suunniteltu_loppu_pvm) <= filters.dateRange!.end!);
+    }
+
+    setTravelPlans(filtered);
   };
 
   return (
@@ -153,6 +163,7 @@ const TravelPlansView = () => {
             ) : (
               <TravelPlanList
                 plans={travelPlans}
+                currentUserId={currentUser?.id}
                 onRequestJoin={handleRequestJoin}
                 onViewDetails={handleViewDetails}
               />
@@ -166,6 +177,7 @@ const TravelPlansView = () => {
 
 const TravelPlanDetailView = () => {
   const navigate = useNavigate();
+  const { user: currentUser } = useKäyttäjä();
   const { state } = useLocation();
 
   const plan = (state as { plan?: TravelPlanWithUser } | null)?.plan ?? null;
@@ -273,21 +285,27 @@ const TravelPlanDetailView = () => {
             )}
           </div>
 
-          {/* Request to join */}
-          <button
-            className="mt-4 block w-full rounded bg-indigo-600 p-2 text-center text-white font-semibold transition-all duration-300 hover:bg-indigo-700"
-            onClick={async () => {
-              try {
-                await api.buddyRequest.sendBuddyRequest(plan.id, 'Request to join this trip.');
-                alert('Join request sent successfully!');
-              } catch (err) {
-                console.error('Request join error:', err);
-                alert('Failed to send join request');
-              }
-            }}
-          >
-            Request to Join This Trip
-          </button>
+          {/* Request to join / own plan indicator */}
+          {currentUser && plan.userId === currentUser.id ? (
+            <div className="mt-4 block w-full rounded bg-white/10 p-2 text-center text-white/70 font-semibold">
+              This is your published plan
+            </div>
+          ) : (
+            <button
+              className="mt-4 block w-full rounded bg-indigo-600 p-2 text-center text-white font-semibold transition-all duration-300 hover:bg-indigo-700"
+              onClick={async () => {
+                try {
+                  await api.buddyRequest.sendBuddyRequest(plan.id, 'Request to join this trip.');
+                  alert('Join request sent successfully!');
+                } catch (err) {
+                  console.error('Request join error:', err);
+                  alert('Failed to send join request');
+                }
+              }}
+            >
+              Request to Join This Trip
+            </button>
+          )}
         </div>
       </article>
     </div>

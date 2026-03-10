@@ -50,7 +50,6 @@ function enrichPost(post: julkaisu): julkaisuWithRelations {
 }
 
 const postContentsModel = {
-  //  julkaisut (posts)
   createNewPost: (kuvaus: string, kohde: string, userId: number, list_aktiviteetti?: string, otsikko?: string, media_type?: string, media_url?: string, sisältö?: string): RunResult => {
     const stmt = db.prepare(`
       INSERT INTO julkaisu (userId, kuvaus, kohde, list_aktiviteetti, Date_ajakohta, otsikko, media_type, media_url, sisältö)
@@ -123,6 +122,8 @@ const postContentsModel = {
       params.push(list_aktiviteetti);
     }
 
+    if (updates.length === 0) return null;
+
     params.push(julkaisuId);
     const stmt = db.prepare(`
       UPDATE julkaisu
@@ -169,7 +170,6 @@ const postContentsModel = {
     return result;
   },
 
-  //TYKKÄYKSET (Likes)
   addLike: (julkaisuId: number, userId: number): RunResult => {
     const stmt = db.prepare(`
       INSERT INTO tykkäykset (julkaisuId, userId)
@@ -243,7 +243,6 @@ const postContentsModel = {
     return result;
   },
 
-  // MATKA-AIKEET (Travel Plans)
   createTravelPlan: (userId: number, kohde: string, suunniteltu_alku_pvm: string, suunniteltu_loppu_pvm: string, aktiviteetit?: string, budjetti?: string, kuvaus?: string): RunResult => {
     const stmt = db.prepare(`
       INSERT INTO matkaAikeet (userId, kohde, suunniteltu_alku_pvm, suunniteltu_loppu_pvm, aktiviteetit, budjetti, kuvaus)
@@ -265,6 +264,7 @@ const postContentsModel = {
       LEFT JOIN käyttäjä u ON m.userId = u.id
       ORDER BY m.suunniteltu_alku_pvm DESC
     `);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const rows = stmt.all() as any[];
     return rows.map(row => {
       const { user_id, user_käyttäjäTunnus, user_etunimi, user_sukunimi, user_profile_picture_url, ...plan } = row;
@@ -364,6 +364,13 @@ const postContentsModel = {
     return result;
   },
 
+  getBuddyRequestById: (requestId: number): friendRequest | undefined => {
+    const stmt = db.prepare(`
+      SELECT * FROM friendRequest WHERE id = ?
+    `);
+    return stmt.get(requestId) as friendRequest | undefined;
+  },
+
   acceptBuddyRequest: (requestId: number): RunResult => {
     const stmt = db.prepare(`
       UPDATE friendRequest
@@ -449,6 +456,14 @@ const postContentsModel = {
     return result as { otherUserId: number; lastMessageTime: string }[];
   },
 
+  markMessagesAsRead: (receiverId: number, senderId: number): RunResult => {
+    const stmt = db.prepare(`
+      UPDATE chatMessages SET isRead = 1
+      WHERE receiverId = ? AND senderId = ? AND isRead = 0
+    `);
+    return stmt.run(receiverId, senderId);
+  },
+
   //  --> Ilmoitukset
   createNotification: (userId: number, message: string, notificationType: notifications['notificationType'], relatedId?: number): RunResult => {
     const stmt = db.prepare(`
@@ -496,16 +511,16 @@ const postContentsModel = {
     const result = stmt.run(notificationId);
     return result;
   },
-  //  --> HAKU (Search)
-  searchPosts: (query: string): julkaisu[] => {
+
+  searchPosts: (query: string): julkaisuWithRelations[] => {
     const stmt = db.prepare(`
       SELECT * FROM julkaisu
       WHERE kuvaus LIKE ? OR kohde LIKE ?
       ORDER BY Date_ajakohta DESC
     `);
     const likeQuery = `%${query}%`;
-    const result = stmt.all(likeQuery, likeQuery) as julkaisu[];
-    return result;
+    const rawPosts = stmt.all(likeQuery, likeQuery) as julkaisu[];
+    return rawPosts.map(enrichPost);
   },
 
   searchTravelPlans: (query: string): matkaAikeet[] => {
@@ -518,7 +533,7 @@ const postContentsModel = {
     const result = stmt.all(likeQuery, likeQuery) as matkaAikeet[];
     return result;
   },
-  //  --> TRENDING (Suositut julkaisut)
+
   getTrendingPosts: (limit: number = 10, daysBack: number = 7): julkaisu[] => {
     const stmt = db.prepare(`
       SELECT

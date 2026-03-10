@@ -80,7 +80,7 @@ jobs:
       # Shared types —-> compile time dependency only, not a deployable service.
       # dist/ is gitignored --> it is only compiled to resolve imports.
       - name: Resolve shared types
-        run: cd XplorerComrade-hybrid-types-server && npm install && npm run build
+        run: cd XComrade-hybrid-types && npm install && npm run build
 
       - name: Install dependencies
         working-directory: XComrade-backend/${{ matrix.server }}
@@ -115,7 +115,7 @@ jobs:
           node-version: ${{ env.NODE_VERSION }}
 
       - name: Resolve shared types
-        run: cd XplorerComrade-hybrid-types-server && npm install && npm run build
+        run: cd XComrade-hybrid-types && npm install && npm run build
 
       - name: Install dependencies
         working-directory: XComrade-frontend
@@ -173,7 +173,7 @@ jobs:
           node-version: ${{ env.NODE_VERSION }}
 
       - name: Resolve shared types
-        run: cd XplorerComrade-hybrid-types-server && npm install && npm run build
+        run: cd XComrade-hybrid-types && npm install && npm run build
 
       # ──> Build & Deploy auth-server
       - name: Build auth-server

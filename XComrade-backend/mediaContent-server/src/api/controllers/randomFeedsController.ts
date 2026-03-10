@@ -1,6 +1,5 @@
 import type { Request, Response, NextFunction } from 'express';
 import randomFeedsModel from '../models/randomFeedsModel';
-//import postContentsModel from '../models/mediaContentModel';
 import db from '../../database/db-manipulation';
 
 const randomFeedsControllers = {
@@ -19,8 +18,8 @@ const randomFeedsControllers = {
   // GET /api/users/random
   getRandomUsers: (req: Request, res: Response, next: NextFunction): void => {
     try {
-      const currentUserId = res.locals.user?.id as number;
-      const currentUsername = res.locals.user?.käyttäjäTunnus as string;
+      const currentUserId = req.user?.id as number;
+      const currentUsername = req.user?.käyttäjäTunnus as string;
 
        // If no authenticated user, return random users without filtering
       if (!currentUserId || !currentUsername) {

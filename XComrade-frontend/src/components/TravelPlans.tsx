@@ -1,6 +1,8 @@
-import type { matkaAikeet, friendRequest, tripParticipants, userProfile } from '@xcomrade/types-server';
+import type { matkaAikeet, tripParticipants, userProfile } from '@xcomrade/types-server';
 import { useState } from 'react';
 import { FaCalendarAlt } from "react-icons/fa";
+import { DEFAULT_AVATAR, toArray } from '../../utilHelpers/constants';
+import type { TravelPlanListProps, BuddyRequestWithUser, TravelPlanCardProps } from '../../utilHelpers/types/localTypes';
 /*
   - TravelPlanCard --> Single travel plan display (matkaAikeet)
   - TravelPlanList --> List of travel plans
@@ -10,34 +12,10 @@ import { FaCalendarAlt } from "react-icons/fa";
   - ActivityChips --> Display list of activities
 */
 
-/** Safely convert a value that may be a JSON string or already an array into a string[] */
-const toArray = (value: unknown): string[] => {
-  if (Array.isArray(value)) return value;
-  if (typeof value === 'string') {
-    try {
-      const parsed = JSON.parse(value);
-      return Array.isArray(parsed) ? parsed : [];
-    } catch {
-      return value.trim() ? [value] : [];
-    }
-  }
-  return [];
-};
 
-const DEFAULT_AVATAR = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ccircle cx='50' cy='50' r='50' fill='%23555'/%3E%3Ccircle cx='50' cy='38' r='18' fill='%23888'/%3E%3Cellipse cx='50' cy='80' rx='30' ry='22' fill='%23888'/%3E%3C/svg%3E";
 
-interface TravelPlanWithUser extends matkaAikeet {
-  user?: Pick<userProfile, 'id' | 'käyttäjäTunnus' | 'etunimi' | 'sukunimi' | 'profile_picture_url'>;
-  participantsCount?: number;
-}
-
-interface TravelPlanCardProps {
-  plan: TravelPlanWithUser;
-  onRequestJoin?: (planId: number) => void;
-  onViewDetails?: (planId: number) => void;
-}
-
-const TravelPlanCard = ({ plan, onRequestJoin, onViewDetails }: TravelPlanCardProps) => {
+const TravelPlanCard = ({ plan, currentUserId, onRequestJoin, onViewDetails }: TravelPlanCardProps) => {
+  const isOwnPlan = currentUserId != null && plan.userId === currentUserId;
   const startDate = new Date(plan.suunniteltu_alku_pvm).toLocaleDateString('fi-FI');
   const endDate = new Date(plan.suunniteltu_loppu_pvm).toLocaleDateString('fi-FI');
   const activities = toArray(plan.aktiviteetit);
@@ -102,12 +80,21 @@ const TravelPlanCard = ({ plan, onRequestJoin, onViewDetails }: TravelPlanCardPr
           >
             View Details
           </button>
-          <button
-            className="flex items-center gap-1 text-xs text-white/60 hover:text-green-400 transition-colors bg-transparent border-none p-0 m-0 cursor-pointer"
-            onClick={(e) => { e.stopPropagation(); onRequestJoin?.(plan.id); }}
-          >
-            Request to Join
-          </button>
+          {isOwnPlan ? (
+            <button
+              className="flex items-center gap-1 text-xs text-white/60 hover:text-indigo-400 transition-colors bg-transparent border-none p-0 m-0 cursor-pointer"
+              onClick={(e) => { e.stopPropagation(); onViewDetails?.(plan.id); }}
+            >
+              View Your Plan
+            </button>
+          ) : (
+            <button
+              className="flex items-center gap-1 text-xs text-white/60 hover:text-green-400 transition-colors bg-transparent border-none p-0 m-0 cursor-pointer"
+              onClick={(e) => { e.stopPropagation(); onRequestJoin?.(plan.id); }}
+            >
+              Request to Join
+            </button>
+          )}
           {plan.user && (
             <span className="ml-auto text-xs text-white/40">
               Created by: @{plan.user.käyttäjäTunnus || plan.user.etunimi}
@@ -119,13 +106,8 @@ const TravelPlanCard = ({ plan, onRequestJoin, onViewDetails }: TravelPlanCardPr
   );
 };
 
-interface TravelPlanListProps {
-  plans: TravelPlanWithUser[];
-  onRequestJoin?: (planId: number) => void;
-  onViewDetails?: (planId: number) => void;
-}
 
-const TravelPlanList = ({ plans, onRequestJoin, onViewDetails }: TravelPlanListProps) => {
+const TravelPlanList = ({ plans, currentUserId, onRequestJoin, onViewDetails }: TravelPlanListProps) => {
   return (
     <div>
       <h2 className="text-xl font-bold text-white mb-5">Travel Plans</h2>
@@ -137,6 +119,7 @@ const TravelPlanList = ({ plans, onRequestJoin, onViewDetails }: TravelPlanListP
             <TravelPlanCard
               key={plan.id}
               plan={plan}
+              currentUserId={currentUserId}
               onRequestJoin={onRequestJoin}
               onViewDetails={onViewDetails}
             />
@@ -256,10 +239,6 @@ const TravelPlanForm = ({ onSubmit, initialData, isLoading }: TravelPlanFormProp
     </form>
   );
 };
-
-interface BuddyRequestWithUser extends friendRequest {
-  requester: Pick<userProfile, 'id' | 'käyttäjäTunnus' | 'etunimi' | 'sukunimi' | 'profile_picture_url'>;
-}
 
 interface BuddyRequestCardProps {
   request: BuddyRequestWithUser;

@@ -12,13 +12,13 @@ import type {
   userProfile
 } from '@xcomrade/types-server';
 import mediaContentModel from '../models/mediaContentModel';
+import { sendToUser } from '../../websocket';
+import db from '../../database/db-manipulation';
 
 // Extend Express Request to include authenticated user
 interface AuthenticatedRequest extends Request {
   user?: Pick<userProfile, 'id' | 'käyttäjäTunnus' | 'user_level_id'>;
 }
-
-//  POSTS (Julkaisut)
 
 const getFeed = async (req: Request, res: Response): Promise<void> => {
   try {
@@ -134,12 +134,23 @@ const deletePost = async (req: Request, res: Response): Promise<void> => {
 const searchPosts = async (req: Request, res: Response): Promise<void> => {
   try {
     const query = req.query.q as string;
-    const posts: julkaisu[] = mediaContentModel.searchPosts(query);
+    const posts = mediaContentModel.searchPosts(query);
 
     res.json(posts);
   } catch (error) {
     console.error('Error searching posts:', error);
     res.status(500).json({ message: 'Server error while searching posts' });
+  }
+};
+
+const searchTravelPlans = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const query = req.query.q as string;
+    const plans: matkaAikeet[] = mediaContentModel.searchTravelPlans(query);
+    res.json(plans);
+  } catch (error) {
+    console.error('Error searching travel plans:', error);
+    res.status(500).json({ message: 'Server error while searching travel plans' });
   }
 };
 
@@ -155,8 +166,6 @@ const getTrendingPosts = async (req: Request, res: Response): Promise<void> => {
     res.status(500).json({ message: 'Server error while fetching trending posts' });
   }
 };
-
-// Kommentit
 
 const getComments = async (req: Request, res: Response): Promise<void> => {
   try {
@@ -181,7 +190,49 @@ const addComment = async (req: AuthenticatedRequest, res: Response): Promise<voi
     }
 
     const result = mediaContentModel.addComment(teksti_kenttä, postId, userId);
-    res.status(201).json({ id: result.lastInsertRowid, teksti_kenttä, julkaisuId: postId, userId });
+
+    // Notify the post owner about the comment
+    try {
+      const post = mediaContentModel.getPostById(postId);
+      if (post && post.userId !== userId) {
+        const commenterName = req.user!.käyttäjäTunnus;
+        const notifMsg = `@${commenterName} commented on your post`;
+        const notifResult = mediaContentModel.createNotification(
+          post.userId,
+          notifMsg,
+          'comment',
+          postId
+        );
+        sendToUser(post.userId, {
+          type: 'notification',
+          payload: {
+            id: Number(notifResult.lastInsertRowid),
+            userId: post.userId,
+            message: notifMsg,
+            isRead: false,
+            notificationType: 'comment',
+            relatedId: postId,
+            createdAt: new Date(),
+          },
+        });
+      }
+    } catch (notifErr) {
+      console.error('Failed to create comment notification:', notifErr);
+    }
+
+    // Return the full comment with user data so the frontend can display it immediately
+    const user = db.prepare(
+      `SELECT id, käyttäjäTunnus, profile_picture_url FROM käyttäjä WHERE id = ?`
+    ).get(userId) as { id: number; käyttäjäTunnus: string; profile_picture_url: string } | undefined;
+
+    res.status(201).json({
+      id: result.lastInsertRowid,
+      teksti_kenttä,
+      julkaisuId: postId,
+      userId,
+      createdAt: new Date().toISOString(),
+      user: user || { id: userId, käyttäjäTunnus: 'unknown', profile_picture_url: '' },
+    });
   } catch (error) {
     console.error('Error adding comment:', error);
     res.status(500).json({ message: 'Server error while adding comment' });
@@ -199,14 +250,49 @@ const deleteComment = async (req: Request, res: Response): Promise<void> => {
   }
 };
 
-// Tykkäykset
-
 const likePost = async (req: AuthenticatedRequest, res: Response): Promise<void> => {
   try {
     const postId = parseInt(req.params.postId);
     const userId: number = req.user!.id;
 
+    // Check if already liked to avoid unique constraint violation
+    const existing = mediaContentModel.checkUserLiked(postId, userId);
+    if (existing) {
+      res.status(409).json({ message: 'Post already liked' });
+      return;
+    }
+
     const result = mediaContentModel.addLike(postId, userId);
+
+    // Notify the post owner about the like
+    try {
+      const post = mediaContentModel.getPostById(postId);
+      if (post && post.userId !== userId) {
+        const likerName = req.user!.käyttäjäTunnus;
+        const notifMsg = `@${likerName} liked your post`;
+        const notifResult = mediaContentModel.createNotification(
+          post.userId,
+          notifMsg,
+          'like',
+          postId
+        );
+        sendToUser(post.userId, {
+          type: 'notification',
+          payload: {
+            id: Number(notifResult.lastInsertRowid),
+            userId: post.userId,
+            message: notifMsg,
+            isRead: false,
+            notificationType: 'like',
+            relatedId: postId,
+            createdAt: new Date(),
+          },
+        });
+      }
+    } catch (notifErr) {
+      console.error('Failed to create like notification:', notifErr);
+    }
+
     res.status(201).json({ id: result.lastInsertRowid, julkaisuId: postId, userId });
   } catch (error) {
     console.error('Error liking post:', error);
@@ -239,8 +325,6 @@ const checkLikeStatus = async (req: AuthenticatedRequest, res: Response): Promis
     res.status(500).json({ message: 'Server error while checking like status' });
   }
 };
-
-//  TRAVEL PLANS (MATKA-AIKEET)
 
 const getTravelPlans = async (req: Request, res: Response): Promise<void> => {
   try {
@@ -333,8 +417,6 @@ const deleteTravelPlan = async (req: Request, res: Response): Promise<void> => {
   }
 };
 
-//  Friend requests (KAVERIPYYNNÖT)
-
 const getBuddyRequests = async (req: AuthenticatedRequest, res: Response): Promise<void> => {
   try {
     const userId: number = req.user!.id;
@@ -370,7 +452,38 @@ const sendBuddyRequest = async (req: AuthenticatedRequest, res: Response): Promi
     }
 
     const result = mediaContentModel.createBuddyRequest(planId, requesterId, (plan as any).userId, message);
-    res.status(201).json({ id: result.lastInsertRowid, message: 'Buddy request sent successfully' });
+    const buddyRequestId = Number(result.lastInsertRowid);
+    const requesterName = req.user!.käyttäjäTunnus;
+
+    // Notify the plan owner about the buddy request
+    try {
+      const ownerId = (plan as any).userId as number;
+      if (ownerId !== requesterId) {
+        const notifMsg = `@${requesterName} sent you a buddy request for your travel plan`;
+        const notifResult = mediaContentModel.createNotification(
+          ownerId,
+          notifMsg,
+          'buddy_request',
+          buddyRequestId
+        );
+        sendToUser(ownerId, {
+          type: 'notification',
+          payload: {
+            id: Number(notifResult.lastInsertRowid),
+            userId: ownerId,
+            message: notifMsg,
+            isRead: false,
+            notificationType: 'buddy_request',
+            relatedId: buddyRequestId,
+            createdAt: new Date(),
+          },
+        });
+      }
+    } catch (notifErr) {
+      console.error('Failed to create buddy request notification:', notifErr);
+    }
+
+    res.status(201).json({ id: buddyRequestId, message: 'Buddy request sent successfully' });
   } catch (error) {
     console.error('Error sending buddy request:', error);
     res.status(500).json({ message: 'Server error while sending buddy request' });
@@ -380,7 +493,38 @@ const sendBuddyRequest = async (req: AuthenticatedRequest, res: Response): Promi
 const acceptBuddyRequest = async (req: Request, res: Response): Promise<void> => {
   try {
     const requestId = parseInt(req.params.id);
+
+    // Look up the request so we can notify the requester
+    const buddyReq = mediaContentModel.getBuddyRequestById(requestId);
+
     mediaContentModel.acceptBuddyRequest(requestId);
+
+    // Notify the requester that their buddy request was accepted
+    if (buddyReq) {
+      try {
+        const notifResult = mediaContentModel.createNotification(
+          buddyReq.requesterId,
+          'Your buddy request was accepted! ',
+          'buddy_request',
+          requestId
+        );
+        sendToUser(buddyReq.requesterId, {
+          type: 'notification',
+          payload: {
+            id: Number(notifResult.lastInsertRowid),
+            userId: buddyReq.requesterId,
+            message: 'Your buddy request was accepted! ',
+            isRead: false,
+            notificationType: 'buddy_request',
+            relatedId: requestId,
+            createdAt: new Date(),
+          },
+        });
+      } catch (notifErr) {
+        console.error('Failed to create acceptance notification:', notifErr);
+      }
+    }
+
     res.json({ message: 'Buddy request accepted' });
   } catch (error) {
     console.error('Error accepting buddy request:', error);
@@ -398,8 +542,6 @@ const rejectBuddyRequest = async (req: Request, res: Response): Promise<void> =>
     res.status(500).json({ message: 'Server error while rejecting buddy request' });
   }
 };
-
-//  Trip participants (MATKAN OSALLISTUJAT)
 
 const getTripParticipants = async (req: Request, res: Response): Promise<void> => {
   try {
@@ -422,8 +564,6 @@ const removeTripParticipant = async (req: Request, res: Response): Promise<void>
     res.status(500).json({ message: 'Server error while removing participant' });
   }
 };
-
-//  Viestit
 
 const getConversations = async (req: AuthenticatedRequest, res: Response): Promise<void> => {
   try {
@@ -460,6 +600,42 @@ const sendMessage = async (req: AuthenticatedRequest, res: Response): Promise<vo
     }
 
     const result = mediaContentModel.sendMessage(senderId, receiverId, message);
+
+    // Broadcast the new message to the receiver in real-time via WebSocket
+    const newMsg: chatMessages = {
+      id: Number(result.lastInsertRowid),
+      senderId,
+      receiverId,
+      message,
+      sentAt: new Date(),
+    };
+    sendToUser(receiverId, { type: 'new_message', payload: newMsg });
+
+    // Create a notification for the message receiver
+    try {
+      const senderName = req.user!.käyttäjäTunnus;
+      const notifMsg = `@${senderName} sent you a message`;
+      const notifResult = mediaContentModel.createNotification(
+        receiverId,
+        notifMsg,
+        'message',
+        senderId
+      );
+      // Push the notification in real-time via WebSocket
+      const notif: notifications = {
+        id: Number(notifResult.lastInsertRowid),
+        userId: receiverId,
+        message: notifMsg,
+        isRead: false,
+        notificationType: 'message',
+        relatedId: senderId,
+        createdAt: new Date(),
+      };
+      sendToUser(receiverId, { type: 'notification', payload: notif });
+    } catch (notifErr) {
+      console.error('Failed to create message notification:', notifErr);
+    }
+
     res.status(201).json({ id: result.lastInsertRowid, message: 'Message sent successfully' });
   } catch (error) {
     console.error('Error sending message:', error);
@@ -467,7 +643,17 @@ const sendMessage = async (req: AuthenticatedRequest, res: Response): Promise<vo
   }
 };
 
-//  Notifications (ILMOITUKSET)
+const markMessagesAsRead = async (req: AuthenticatedRequest, res: Response): Promise<void> => {
+  try {
+    const senderId = parseInt(req.params.senderId);
+    const receiverId: number = req.user!.id;
+    mediaContentModel.markMessagesAsRead(receiverId, senderId);
+    res.json({ message: 'Messages marked as read' });
+  } catch (error) {
+    console.error('Error marking messages as read:', error);
+    res.status(500).json({ message: 'Server error while marking messages as read' });
+  }
+};
 
 const getNotifications = async (req: AuthenticatedRequest, res: Response): Promise<void> => {
   try {
@@ -514,28 +700,21 @@ const deleteNotification = async (req: Request, res: Response): Promise<void> =>
 };
 
 export {
-  // Posts
-  getFeed, getPost, getUserPosts, createPost, updatePost, deletePost, searchPosts, getTrendingPosts,
-  // Comments
+  getFeed, getPost, getUserPosts, createPost, updatePost, deletePost, searchPosts, searchTravelPlans, getTrendingPosts,
   getComments, addComment, deleteComment,
-  // Likes
   likePost, unlikePost, checkLikeStatus,
-  // Travel Plans
   getTravelPlans, getTravelPlan, getUserTravelPlans, createTravelPlan, updateTravelPlan, deleteTravelPlan,
-  // Buddy Requests
   getBuddyRequests,
   getPlanBuddyRequests,
   sendBuddyRequest,
   acceptBuddyRequest,
   rejectBuddyRequest,
-  // Trip Participants
   getTripParticipants,
   removeTripParticipant,
-  // Messages
   getConversations,
   getMessages,
   sendMessage,
-  // Notifications
+  markMessagesAsRead,
   getNotifications,
   markNotificationAsRead,
   markAllNotificationsAsRead,

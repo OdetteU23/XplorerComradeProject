@@ -1,32 +1,14 @@
-import type { julkaisuWithRelations, userProfile, UserSearchResult } from '@xcomrade/types-server';
-import { useState, useEffect, useReducer } from 'react';
-import  { FeedList } from '../components/Feeds';
-import { SearchBar } from '../components/Forms';
+import { useEffect, useReducer } from 'react';
+import { FeedList } from '../components/Feeds';
 import { UserList } from '../components/Profile';
 import PublicViewPrompt from '../components/publicViewPromp';
 import { useKäyttäjä } from '../content/käyttänKontentti';
 import { api } from '../../utilHelpers/FetchingData';
+import {HomeAction, HomeState} from '../../utilHelpers/types/localTypes';
 import { GiWorld } from 'react-icons/gi';
 import { IoIosWarning } from 'react-icons/io';
-
+import { useHomeLikesAndComments } from './CommentsLikes';
 import { Link, useNavigate } from 'react-router-dom';
-
-// ---- useReducer for HomeView ----
-interface HomeState {
-  posts: julkaisuWithRelations[];
-  randomPosts: julkaisuWithRelations[];
-  suggestedUsers: userProfile[];
-  isLoading: boolean;
-  error: string | null;
-}
-
-type HomeAction =
-  | { type: 'FEED_LOADING' }
-  | { type: 'FEED_SUCCESS'; payload: julkaisuWithRelations[] }
-  | { type: 'FEED_ERROR'; payload: string }
-  | { type: 'SET_RANDOM_POSTS'; payload: julkaisuWithRelations[] }
-  | { type: 'SET_SUGGESTED_USERS'; payload: userProfile[] }
-  | { type: 'UPDATE_POST'; payload: julkaisuWithRelations };
 
 const homeInitialState: HomeState = {
   posts: [],
@@ -36,7 +18,11 @@ const homeInitialState: HomeState = {
   error: null,
 };
 
-function homeReducer(state: HomeState, action: HomeAction): HomeState {
+/*
+  useReducer for HomeView - manages feed posts, random/explore posts,
+  and suggested users, along with loading/error states.
+*/
+const homeReducer = (state: HomeState, action: HomeAction): HomeState => {
   switch (action.type) {
     case 'FEED_LOADING':
       return { ...state, isLoading: true, error: null };
@@ -66,6 +52,9 @@ const HomeView = () => {
   const { isAuthenticated } = useKäyttäjä();
   const navigate = useNavigate();
 
+  // Like & comment handlers from commentsLikes hook
+  const { handleLike, handleComment } = useHomeLikesAndComments(posts, dispatch);
+
   // Deduplicate: remove posts already shown in the main feed from the random/explore section
   const feedPostIds = new Set(posts.map(p => p.id));
   const uniqueRandomPosts = randomPosts.filter(p => !feedPostIds.has(p.id));
@@ -74,7 +63,6 @@ const HomeView = () => {
   const visiblePosts = isAuthenticated ? posts : posts.slice(0, GUEST_CONTENT_LIMIT);
   const visibleRandomPosts = isAuthenticated ? uniqueRandomPosts : uniqueRandomPosts.slice(0, GUEST_CONTENT_LIMIT);
   const visibleSuggestedUsers = isAuthenticated ? suggestedUsers : suggestedUsers.slice(0, GUEST_CONTENT_LIMIT);
-  //const visibleFeedSection = isAuthenticated ? <Feeds posts={visiblePosts} onLike={handleLike} onComment={handleComment} /> : <Feeds posts={visiblePosts} onLike={handleLike} onComment={handleComment} />;
 
   useEffect(() => {
     loadFeed();
@@ -88,40 +76,6 @@ const HomeView = () => {
     } catch (err) {
       dispatch({ type: 'FEED_ERROR', payload: 'Failed to load feed' });
       console.error('Feed error:', err);
-    }
-  };
-
-  const handleLike = async (postId: number) => {
-    try {
-      await api.like.likePost(postId);
-      // Update the post in the local state
-      const post = posts.find(p => p.id === postId);
-      if (post) {
-        dispatch({
-          type: 'UPDATE_POST',
-          payload: { ...post, tykkäykset: [...post.tykkäykset, { id: Date.now(), julkaisuId: postId, userId: 0 }] },
-        });
-      }
-    } catch (err) {
-      console.error('Like error:', err);
-      alert('Failed to like post');
-    }
-  };
-
-  const handleComment = async (postId: number, comment: string) => {
-    try {
-      const newComment = await api.comment.addComment(postId, comment);
-      // Update the post in the local state
-      const post = posts.find(p => p.id === postId);
-      if (post) {
-        dispatch({
-          type: 'UPDATE_POST',
-          payload: { ...post, kommentit: [...post.kommentit, newComment as any] },
-        });
-      }
-    } catch (err) {
-      console.error('Comment error:', err);
-      alert('Failed to add comment');
     }
   };
 
@@ -152,11 +106,6 @@ const HomeView = () => {
       console.error('Suggested users error:', err);
     }
   };
-
-  // if the user hasn't followed anyone yet
-  // and the feed is empty. This will be implemented in the future when the follow system is implemented.
-  // For now, we can just show a message that the feed is empty and suggest the user to follow some users
-  // to see their posts in the feed.
 
   if (isLoading) {
     return (
@@ -210,12 +159,6 @@ const HomeView = () => {
               <h4 className="text-lg font-semibold text-white mb-2">Register/Login to discover travel content from people you follow!</h4>
             </div>
           )}
-          {/*
-          {!isAuthenticated && (
-            <div className="text-center py-12 px-8 bg-white/[0.04] border border-dashed border-white/15 rounded-2xl">
-            </div>
-          )}
-        */}
           {visiblePosts.length === 0 ? (
             isAuthenticated ? (
               <>
@@ -243,7 +186,7 @@ const HomeView = () => {
                 {/* Suggested users row */}
         {suggestedUsers.length > 0 && (
           <section className="mb-8 bg-white/5 border border-white/[0.08] rounded-2xl p-5 backdrop-blur-sm">
-            <h3 className="text-base font-bold text-white/90 mb-4">Creators you might like</h3>
+            <h3 className="text-base font-bold text-white/90 mb-4">Travelers you might like</h3>
             <UserList
               users={visibleSuggestedUsers}
               title="Suggested Users"
@@ -272,234 +215,4 @@ const HomeView = () => {
   );
 };
 
-const SearchView = () => {
-  const [searchQuery, setSearchQuery] = useState('');
-  const [searchResults, setSearchResults] = useState<{
-    users: UserSearchResult[];
-    posts: julkaisuWithRelations[];
-  }>({ users: [], posts: [] });
-  const [activeTab, setActiveTab] = useState<'users' | 'posts'>('posts');
-  const [isSearching, setIsSearching] = useState(false);
-  const navigate = useNavigate();
-
-  // Default random content shown before any search
-  const [defaultUsers, setDefaultUsers] = useState<userProfile[]>([]);
-  const [defaultPosts, setDefaultPosts] = useState<julkaisuWithRelations[]>([]);
-  const [isLoadingDefaults, setIsLoadingDefaults] = useState(true);
-
-  useEffect(() => {
-    const loadDefaults = async () => {
-      setIsLoadingDefaults(true);
-      try {
-        const [users, posts] = await Promise.all([
-          api.randomUser.getRandomUsers(20),
-          api.randomPost.getRandomPosts(20),
-        ]);
-        setDefaultUsers(users);
-        setDefaultPosts(posts);
-      } catch (err) {
-        console.error('Failed to load default content:', err);
-      } finally {
-        setIsLoadingDefaults(false);
-      }
-    };
-    loadDefaults();
-  }, []);
-
-  const handleSearch = async (query: string) => {
-    setSearchQuery(query);
-    if (!query.trim()) {
-      setSearchResults({ users: [], posts: [] });
-      return;
-    }
-
-    setIsSearching(true);
-    try {
-      const [users, posts] = await Promise.all([
-        api.user.searchUsers(query),
-        api.post.searchPosts(query),
-      ]);
-      setSearchResults({ users, posts });
-    } catch (err) {
-      console.error('Search error:', err);
-    } finally {
-      setIsSearching(false);
-    }
-  };
-
-  // Decide which data to display: search results when searching, defaults otherwise
-  const hasQuery = searchQuery.trim().length > 0;
-  const displayUsers = hasQuery ? searchResults.users : defaultUsers;
-  const displayPosts = hasQuery ? searchResults.posts : defaultPosts;
-
-  return (
-    <div className="search-view">
-      <h1>Discover different contents based on the users, destinations and posts</h1>
-      <SearchBar
-        onSearch={handleSearch}
-        placeholder="Search users and destinations..."
-      />
-
-      <div className="search-tabs">
-        <button
-          className={activeTab === 'users' ? 'active' : ''}
-          onClick={() => setActiveTab('users')}
-        >
-          Users
-        </button>
-        <button
-          className={activeTab === 'posts' ? 'active' : ''}
-          onClick={() => setActiveTab('posts')}
-        >
-          Posts
-        </button>
-      </div>
-
-      <div className="max-w-[1400px] mx-auto px-4 pb-8">
-        {isSearching || isLoadingDefaults ? (
-          <p>{isSearching ? 'Searching...' : 'Loading...'}</p>
-        ) : activeTab === 'users' ? (
-          <UserList
-            users={displayUsers}
-            title={hasQuery ? "Search Results" : "Users"}
-            emptyMessage={hasQuery ? "No users found. Try a different search." : "No users to show yet"}
-            onUserClick={(userId) => navigate(`/profile/${userId}`)}
-          />
-        ) : (
-          <div>
-            {displayPosts.length === 0 ? (
-              <p>{hasQuery ? "No posts found. Try a different search." : "No posts to show yet"}</p>
-            ) : (
-              <FeedList
-                posts={displayPosts}
-                onLike={async (id) => {
-                  try {
-                    await api.like.likePost(id);
-                  } catch (err) {
-                    console.error('Like error:', err);
-                  }
-                }}
-                onComment={async (id, comment) => {
-                  try {
-                    await api.comment.addComment(id, comment);
-                  } catch (err) {
-                    console.error('Comment error:', err);
-                  }
-                }}
-              />
-            )}
-          </div>
-        )}
-      </div>
-    </div>
-  );
-};
-
-const SettingsView = () => {
-  const [userProfile, setUserProfile] = useState<userProfile | null>(null);
-  const [isEditing, setIsEditing] = useState(false);
-  const [isLoading, setIsLoading] = useState(true);
-
-  useEffect(() => {
-    loadCurrentUser();
-  }, []);
-
-  const loadCurrentUser = async () => {
-    try {
-      setIsLoading(true);
-      const user = await api.auth.getCurrentUser();
-      setUserProfile(user);
-    } catch (err) {
-      console.error('Load user error:', err);
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const handleUpdateProfile = async (updates: Partial<userProfile>) => {
-
-    if (!userProfile) return;
-
-    try {
-      const updated = await api.user.updateProfile(userProfile.id, updates);
-      setUserProfile(updated);
-      setIsEditing(false);
-      alert('Profile updated successfully!');
-    } catch (err) {
-      console.error('Update profile error:', err);
-      alert('Failed to update profile');
-    }
-  };
-
-  return (
-    <div className="settings-view">
-      <h2>Account Settings</h2>
-              {/* TODO: Implement the profile update functionality */ }
-
-      <section className="profile-settings">
-        <h3>Profile Information</h3>
-        {isLoading ? (
-          <p>Loading...</p>
-        ) : userProfile ? (
-          <div className="settings-form">
-            <div className="form-group">
-              <label>Username</label>
-              <p>@{userProfile.käyttäjäTunnus}</p>
-            </div>
-            <div className="form-group">
-              <label>Username
-                <button onClick={() => handleUpdateProfile({
-                })}>Change username</button>
-              </label>
-              <p>{userProfile.etunimi} {userProfile.sukunimi}</p>
-            </div>
-            <div className="form-group">
-              <label>Email
-                 <button onClick={() => handleUpdateProfile({
-                 })}>Change Email</button>
-              </label>
-              <p>{userProfile.sahkoposti}</p>
-            </div>
-            <div className="form-group">
-              <label>Location
-                 <button onClick={() => setIsEditing(!isEditing)}>
-              {isEditing ? 'Cancel' : 'Edit location'}
-            </button>
-              </label>
-              <p>{userProfile.location || 'Not specified'}</p>
-            </div>
-            <div className="form-group">
-              <label>Bio</label>
-              <p>{userProfile.bio || 'No bio yet'}</p>
-            </div>
-            <button onClick={() => setIsEditing(!isEditing)}>
-              {isEditing ? 'Cancel' : 'Edit Profile'}
-            </button>
-          </div>
-        ) : (
-          <p>Failed to load profile</p>
-        )}
-      </section>
-
-      <section className="account-settings">
-        <h3>Privacy & Security</h3>
-        <button onClick={() => handleUpdateProfile({})}>Change Password</button>
-        <button>Privacy Settings</button>
-      </section>
-
-      <section className="notification-settings">
-        <h3>Notifications</h3>
-        <label>
-          <input type="checkbox" defaultChecked />
-          Email notifications
-        </label>
-        <label>
-          <input type="checkbox" defaultChecked />
-          Push notifications
-        </label>
-      </section>
-    </div>
-  );
-};
-
-export { HomeView, SearchView, SettingsView };
+export { HomeView };

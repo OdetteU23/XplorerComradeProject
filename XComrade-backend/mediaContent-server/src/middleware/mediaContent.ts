@@ -1,22 +1,5 @@
-import { Request, Response as ExpressResponse, NextFunction } from 'express';
+import { Request, Response, NextFunction } from 'express';
 import jwt from 'jsonwebtoken';
-//import mediaContentModel from '../api/models/mediaContentModel';
-//import { Response } from '../utils/types/localTypes';
-
-type Response = ExpressResponse< | unknown | undefined>;
-
-
-declare module 'express-serve-static-core' {
-  interface Request {
-    user?: {
-      id: number;
-      käyttäjäTunnus: string;
-    };
-  }
-}
-
-
-// JWT Secret - In production, this should be in environment variables
 const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key-change-this-in-production';
 
 // Generate JWT token
@@ -46,8 +29,6 @@ export const authenticateToken = (
   try {
     // Verify token
     const decoded = jwt.verify(token, JWT_SECRET) as { id: number; käyttäjäTunnus: string };
-
-    // Attach user info to request (token signature is valid)
 
     // Attach user info to request
     req.user = {

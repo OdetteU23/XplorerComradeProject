@@ -1,6 +1,3 @@
-//import { Response as ExpressResponse } from 'express';
-//import { chatMessages } from '@xcomrade/types-server';
-
 declare module 'express-serve-static-core' {
   interface Request {
     user?: {
@@ -10,9 +7,6 @@ declare module 'express-serve-static-core' {
   }
 }
 
-//type Response = Express.Response;
-
-//type Response = ExpressResponse<unknown | undefined>;
 type UploadMessage =  {
   message: string;
   data: {
@@ -22,5 +16,17 @@ type UploadMessage =  {
     screenshots: string[];
   };
 };
+type UserRow = {
+  id: number;
+  käyttäjäTunnus: string;
+  salasana: string;
+  etunimi: string;
+  sukunimi: string;
+  sahkoposti: string;
+  profile_picture_url?: string | null;
+  bio?: string | null;
+  location?: string | null;
+  created_at: string;
+}
 
-export type { UploadMessage };
+export type { UploadMessage, UserRow };

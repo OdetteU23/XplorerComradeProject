@@ -1,19 +1,24 @@
-import type { userProfile, julkaisuWithRelations, friendRequest, matkaAikeet } from '@xcomrade/types-server';
+import type { userProfile, julkaisuWithRelations } from '@xcomrade/types-server';
 import type { UserStats, BuddyRequestWithUser, TravelPlanWithUser } from '../../utilHelpers/types/localTypes';
 import { useState, useEffect } from 'react';
+import { useMutation } from '@tanstack/react-query';
 import { ProfileHeader, UserList } from '../components/Profile';
-import { FeedList } from '../components/Feeds';
+import { PostCard } from '../components/Feeds';
 import { BuddyRequestCard } from '../components/TravelPlans';
 import { TravelPlanList } from '../components/TravelPlans';
 import { api } from '../../utilHelpers/FetchingData';
 import { useKäyttäjä } from '../content/käyttänKontentti';
-import { useParams } from 'react-router-dom';
+import { useLikeStore } from '../hooks/store';
+import { useLikeReducer } from '../hooks/useLikeReducer';
+import { useParams, useNavigate } from 'react-router-dom';
 
 const ProfileView = () => {
   const { userId: paramUserId } = useParams<{ userId: string }>();
   const { user: currentUser } = useKäyttäjä();
+  const navigate = useNavigate();
   const [user, setUser] = useState<userProfile | null>(null);
   const [userPosts, setUserPosts] = useState<julkaisuWithRelations[]>([]);
+  const [userTrips, setUserTrips] = useState<TravelPlanWithUser[]>([]);
   const [stats, setStats] = useState<UserStats>({ postsCount: 0, followersCount: 0, followingCount: 0 });
   const [isFollowing, setIsFollowing] = useState(false);
   const [activeTab, setActiveTab] = useState<'posts' | 'trips'>('posts');
@@ -32,14 +37,16 @@ const ProfileView = () => {
       setIsLoading(true);
 
       // Public data — always safe to fetch
-      const [profile, posts, userStats] = await Promise.all([
+      const [profile, posts, userStats, trips] = await Promise.all([
         api.user.getProfile(userId),
         api.post.getUserPosts(userId),
         api.user.getUserStats(userId),
+        api.travelPlan.getUserTravelPlans(userId),
       ]);
       setUser(profile);
       setUserPosts(posts);
       setStats(userStats);
+      setUserTrips(trips as TravelPlanWithUser[]);
 
       // Follow status — only fetch when logged in and viewing another user's profile
       if (currentUser && !isOwnProfile) {
@@ -47,7 +54,7 @@ const ProfileView = () => {
           const followStatus = await api.follow.isFollowing(userId);
           setIsFollowing(Boolean((followStatus as { success?: boolean })?.success));
         } catch {
-          // Silently ignore — user might not have follow access
+          // Silently ignore the user with no follow access
           setIsFollowing(false);
         }
       }
@@ -59,8 +66,7 @@ const ProfileView = () => {
   };
 
   const handleEditProfile = () => {
-    console.log('Edit profile');
-    // TODO: Navigate to edit profile page
+    navigate('/settings');
   };
 
   const handleFollowToggle = async () => {
@@ -80,18 +86,75 @@ const ProfileView = () => {
     }
   };
 
-  const handleLike = async (postId: number) => {
-    try {
-      await api.like.likePost(postId);
-      // Update posts
-      setUserPosts(userPosts.map(post =>
-        post.id === postId
-          ? { ...post, tykkäykset: [...post.tykkäykset, { id: Date.now(), julkaisuId: postId, userId: 0 }] }
-          : post
-      ));
-    } catch (err) {
-      console.error('Like error:', err);
-    }
+  // Like state: useReducer (likeReducer) + Zustand store sync
+  const { likeState, toggleLikeOptimistic, confirmLike, revertLike, setPostLikes } = useLikeReducer();
+  const likeStore = useLikeStore();
+
+  // Sync post likes into the reducer and Zustand store when posts load
+  useEffect(() => {
+    userPosts.forEach((p) => {
+      setPostLikes(p.id, p.tykkäykset ?? [], currentUser?.id ?? 0);
+      likeStore.setLikes(p.id, p.tykkäykset ?? []);
+    });
+  }, [userPosts]);
+
+  // React Query mutation for like/unlike toggle with optimistic updates
+  const profileLikeMutation = useMutation({
+    mutationFn: async ({ postId, isLiked }: { postId: number; isLiked: boolean }) => {
+      if (isLiked) {
+        return api.like.unlikePost(postId);
+      }
+      return api.like.likePost(postId);
+    },
+    onMutate: async ({ postId }) => {
+      const uid = currentUser?.id ?? 0;
+      toggleLikeOptimistic(postId, uid);
+      const alreadyLiked = likeState.likedByUser.has(postId);
+      if (alreadyLiked) {
+        likeStore.removeLike(postId, uid);
+        setUserPosts(prev => prev.map(p =>
+          p.id === postId
+            ? { ...p, tykkäykset: p.tykkäykset.filter(l => l.userId !== uid) }
+            : p
+        ));
+      } else {
+        const optimisticLike = { id: Date.now(), julkaisuId: postId, userId: uid };
+        likeStore.addLike(postId, optimisticLike);
+        setUserPosts(prev => prev.map(p =>
+          p.id === postId
+            ? { ...p, tykkäykset: [...p.tykkäykset, optimisticLike] }
+            : p
+        ));
+      }
+    },
+    onSuccess: (_data, { postId }) => {
+      confirmLike(postId, { id: Date.now(), julkaisuId: postId, userId: currentUser?.id ?? 0 });
+    },
+    onError: (_err, { postId }) => {
+      const uid = currentUser?.id ?? 0;
+      revertLike(postId, uid);
+      const wasLiked = likeState.likedByUser.has(postId);
+      if (wasLiked) {
+        likeStore.removeLike(postId, uid);
+        setUserPosts(prev => prev.map(p =>
+          p.id === postId
+            ? { ...p, tykkäykset: p.tykkäykset.filter(l => l.userId !== uid) }
+            : p
+        ));
+      } else {
+        likeStore.addLike(postId, { id: Date.now(), julkaisuId: postId, userId: uid });
+        setUserPosts(prev => prev.map(p =>
+          p.id === postId
+            ? { ...p, tykkäykset: [...p.tykkäykset, { id: Date.now(), julkaisuId: postId, userId: uid }] }
+            : p
+        ));
+      }
+    },
+  });
+
+  const handleLike = (postId: number) => {
+    const isLiked = likeState.likedByUser.has(postId);
+    profileLikeMutation.mutate({ postId, isLiked });
   };
 
   const handleComment = async (postId: number, comment: string) => {
@@ -122,34 +185,55 @@ const ProfileView = () => {
         onFollowToggle={handleFollowToggle}
       />
 
-      <div className="profile-tabs">
+      <div className="flex justify-center gap-3 my-4">
         <button
-          className={activeTab === 'posts' ? 'active' : ''}
+          className={`px-5 py-2 rounded-full border text-sm transition-all cursor-pointer ${
+            activeTab === 'posts'
+              ? 'bg-indigo-600 text-white border-indigo-600'
+              : 'bg-transparent text-white/70 border-white/15 hover:bg-white/10'
+          }`}
           onClick={() => setActiveTab('posts')}
         >
           Posts ({stats.postsCount})
         </button>
         <button
-          className={activeTab === 'trips' ? 'active' : ''}
+          className={`px-5 py-2 rounded-full border text-sm transition-all cursor-pointer ${
+            activeTab === 'trips'
+              ? 'bg-indigo-600 text-white border-indigo-600'
+              : 'bg-transparent text-white/70 border-white/15 hover:bg-white/10'
+          }`}
           onClick={() => setActiveTab('trips')}
         >
-          Trips
+          Trips ({userTrips.length})
         </button>
       </div>
 
-      <div className="profile-content">
+      <div className="w-full max-w-7xl mx-auto px-4">
         {activeTab === 'posts' ? (
           userPosts.length === 0 ? (
             <p className="empty-message">No posts yet</p>
           ) : (
-            <FeedList
-              posts={userPosts}
-              onLike={handleLike}
-              onComment={handleComment}
-            />
+            <div className="flex flex-wrap justify-center gap-5">
+              {userPosts.map((post) => (
+                <div key={post.id} className="w-full sm:w-[calc(50%-0.625rem)] lg:w-[calc(33.333%-0.85rem)] xl:w-[calc(25%-0.95rem)]">
+                  <PostCard
+                    post={post}
+                    onLike={handleLike}
+                    onComment={handleComment}
+                  />
+                </div>
+              ))}
+            </div>
           )
         ) : (
-          <p className="empty-message">Trips section coming soon</p>
+          userTrips.length === 0 ? (
+            <p className="empty-message">No travel plans yet</p>
+          ) : (
+            <TravelPlanList
+              plans={userTrips}
+              currentUserId={currentUser?.id}
+            />
+          )
         )}
       </div>
     </div>
@@ -161,7 +245,9 @@ const FollowingView = () => {
   const [following, setFollowing] = useState<userProfile[]>([]);
   const [activeTab, setActiveTab] = useState<'followers' | 'following'>('followers');
   const [isLoading, setIsLoading] = useState(true);
-  const [userId] = useState(1); // TODO: Get from auth
+  const { user: currentUser } = useKäyttäjä();
+  const navigate = useNavigate();
+  const userId = currentUser?.id ?? 0;
 
   useEffect(() => {
     loadConnections();
@@ -184,23 +270,30 @@ const FollowingView = () => {
   };
 
   const handleUserClick = (userId: number) => {
-    console.log('Navigate to user profile:', userId);
-    // TODO: Navigate to user profile
+    navigate(`/profile/${userId}`);
   };
 
   return (
     <div className="following-view">
       <h2>Connections</h2>
 
-      <div className="following-tabs">
+      <div className="flex justify-center gap-3 my-4">
         <button
-          className={activeTab === 'followers' ? 'active' : ''}
+          className={`px-5 py-2 rounded-full border text-sm transition-all cursor-pointer ${
+            activeTab === 'followers'
+              ? 'bg-indigo-600 text-white border-indigo-600'
+              : 'bg-transparent text-white/70 border-white/15 hover:bg-white/10'
+          }`}
           onClick={() => setActiveTab('followers')}
         >
           Followers ({followers.length})
         </button>
         <button
-          className={activeTab === 'following' ? 'active' : ''}
+          className={`px-5 py-2 rounded-full border text-sm transition-all cursor-pointer ${
+            activeTab === 'following'
+              ? 'bg-indigo-600 text-white border-indigo-600'
+              : 'bg-transparent text-white/70 border-white/15 hover:bg-white/10'
+          }`}
           onClick={() => setActiveTab('following')}
         >
           Following ({following.length})
@@ -329,8 +422,10 @@ const BuddyRequestsView = () => {
 const MyTripsView = () => {
   const [myTrips, setMyTrips] = useState<TravelPlanWithUser[]>([]);
   const [activeFilter, setActiveFilter] = useState<'upcoming' | 'past' | 'all'>('upcoming');
-  const [isLoading, setIsLoading] = useState(true);
-  const [userId] = useState(1); // TODO: Get from auth
+  const [, setIsLoading] = useState(true);
+  const { user: currentUser } = useKäyttäjä();
+  const navigate = useNavigate();
+  const userId = currentUser?.id ?? 0;
 
   useEffect(() => {
     loadMyTrips();
@@ -339,8 +434,7 @@ const MyTripsView = () => {
   const loadMyTrips = async () => {
     try {
       setIsLoading(true);
-      const trips = await api.travelPlan.getTravelPlans();
-      // Filter for user's trips (assuming API returns all or we need to filter)
+      const trips = await api.travelPlan.getUserTravelPlans(userId);
       setMyTrips(trips as unknown as TravelPlanWithUser[]);
     } catch (err) {
       console.error('Load my trips error:', err);
@@ -349,14 +443,9 @@ const MyTripsView = () => {
     }
   };
 
-  const handleRequestJoin = (planId: number) => {
-    console.log('Request to join plan:', planId);
-    // TODO: This shouldn't happen on own trips
-  };
-
   const handleViewDetails = (planId: number) => {
-    console.log('View trip details:', planId);
-    // TODO: Navigate to trip detail view
+    const plan = myTrips.find(p => p.id === planId);
+    navigate(`/travel-plans/${planId}`, { state: { plan } });
   };
 
   const filterTrips = () => {
@@ -405,7 +494,6 @@ const MyTripsView = () => {
       ) : (
         <TravelPlanList
           plans={filteredTrips}
-          onRequestJoin={handleRequestJoin}
           onViewDetails={handleViewDetails}
         />
       )}

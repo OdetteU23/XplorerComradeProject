@@ -1,220 +1,118 @@
-/*
 import request from 'supertest';
-import express, { Application } from 'express';
-import authRoutes from '../src/api/routes/authRoutes';
-import db from '../src/database/db-manipulation';
-import { registeringInfo, loginInfo } from '@xcomrade/types-server';
+import express from 'express';
+import fs from 'fs';
+import path from 'path';
+import uploadRoutes from '../src/api/routes/uploadRoutes';
 
-// Create minimal express app for testing
-const app: Application = express();
-app.use(express.json());
-app.use('/api/auth', authRoutes);
+const UPLOADS_DIR = path.resolve(__dirname, '../uploads');
 
-describe('Authentication API Integration Tests', () => {
-  // Clean up database before each test
-  beforeEach(() => {
-    db.prepare('DELETE FROM käyttäjä').run();
+beforeAll(() => {
+  if (!fs.existsSync(UPLOADS_DIR)) {
+    fs.mkdirSync(UPLOADS_DIR, { recursive: true });
+  }
+});
+
+afterEach(() => {
+  // Clean up any files written to uploads during tests
+  if (fs.existsSync(UPLOADS_DIR)) {
+    fs.readdirSync(UPLOADS_DIR).forEach((file) => {
+      try {
+        fs.unlinkSync(path.join(UPLOADS_DIR, file));
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      } catch (_) {
+        // ignore errors for already-deleted files
+      }
+    });
+  }
+});
+
+/**
+ * Build an Express app with optional user context injected into res.locals.
+ * This simulates what the real auth middleware would set.
+ */
+function createApp(userLevelId?: number, userId?: number) {
+  const app = express();
+  app.use(express.json());
+  if (userLevelId !== undefined || userId !== undefined) {
+    app.use((_req, res, next) => {
+      if (userLevelId !== undefined) res.locals.user_level_id = userLevelId;
+      if (userId !== undefined) res.locals.user_id = userId;
+      next();
+    });
+  }
+  app.use('/api/upload', uploadRoutes);
+  return app;
+}
+
+// ---------------------------------------------------------------------------
+// POST /api/upload/upload
+// ---------------------------------------------------------------------------
+describe('POST /api/upload/upload', () => {
+  it('returns 400 when no file is attached', async () => {
+    const app = createApp();
+    const res = await request(app).post('/api/upload/upload').expect(400);
+    expect(res.body.message).toBe('No file uploaded');
   });
 
-  afterAll(() => {
-    db.close();
-  });
+  it('returns 200 and file metadata when a valid file is uploaded', async () => {
+    const app = createApp();
+    const res = await request(app)
+      .post('/api/upload/upload')
+      .attach('file', Buffer.from('fake image data'), 'test-image.jpg')
+      .expect(200);
 
-  describe('POST /api/auth/register', () => {
-    const validUser: registeringInfo = {
-      käyttäjäTunnus: 'testuser',
-      salasana: 'TestPassword123',
-      etunimi: 'Test',
-      sukunimi: 'User',
-      sahkoposti: 'test@example.com',
-      bio: 'Test bio',
-      location: 'Test City',
-    };
-
-    it('should register a new user successfully', async () => {
-      const response = await request(app)
-        .post('/api/auth/register')
-        .send(validUser)
-        .expect(201);
-
-      expect(response.body.message).toBe('User registered successfully');
-      expect(response.body.token).toBeDefined();
-      expect(response.body.user).toBeDefined();
-      expect(response.body.user.käyttäjäTunnus).toBe(validUser.käyttäjäTunnus);
-      expect(response.body.user.salasana).toBeUndefined(); // Password should not be returned
-    });
-
-    it('should return 400 for missing required fields', async () => {
-      const invalidUser = {
-        käyttäjäTunnus: 'testuser',
-        // Missing required fields
-      };
-
-      const response = await request(app)
-        .post('/api/auth/register')
-        .send(invalidUser)
-        .expect(400);
-
-      expect(response.body.message).toContain('required');
-    });
-
-    it('should return 409 for duplicate username', async () => {
-      // Register first user
-      await request(app).post('/api/auth/register').send(validUser);
-
-      // Try to register with same username
-      const response = await request(app)
-        .post('/api/auth/register')
-        .send(validUser)
-        .expect(409);
-
-      expect(response.body.message).toBe('Username already exists');
-    });
-
-    it('should return 409 for duplicate email', async () => {
-      await request(app).post('/api/auth/register').send(validUser);
-
-      // Try to register with different username but same email
-      const duplicateEmail = {
-        ...validUser,
-        käyttäjäTunnus: 'differentuser',
-      };
-
-      const response = await request(app)
-        .post('/api/auth/register')
-        .send(duplicateEmail)
-        .expect(409);
-
-      expect(response.body.message).toBe('Email already registered');
-    });
-  });
-
-  describe('POST /api/auth/login', () => {
-    const testUser: registeringInfo = {
-      käyttäjäTunnus: 'logintest',
-      salasana: 'LoginPassword123',
-      etunimi: 'Login',
-      sukunimi: 'Test',
-      sahkoposti: 'login@example.com',
-    };
-
-    beforeEach(async () => {
-      // Register a user before each login test
-      await request(app).post('/api/auth/register').send(testUser);
-    });
-
-    it('should login successfully with correct credentials', async () => {
-      const credentials: loginInfo = {
-        käyttäjäTunnus: testUser.käyttäjäTunnus,
-        salasana: testUser.salasana,
-      };
-
-      const response = await request(app)
-        .post('/api/auth/login')
-        .send(credentials)
-        .expect(200);
-
-      expect(response.body.message).toBe('Login successful');
-      expect(response.body.token).toBeDefined();
-      expect(response.body.user).toBeDefined();
-      expect(response.body.user.käyttäjäTunnus).toBe(testUser.käyttäjäTunnus);
-    });
-
-    it('should return 401 for non-existent username', async () => {
-      const credentials: loginInfo = {
-        käyttäjäTunnus: 'nonexistent',
-        salasana: 'password',
-      };
-
-      const response = await request(app)
-        .post('/api/auth/login')
-        .send(credentials)
-        .expect(401);
-
-      expect(response.body.message).toBe('Invalid username or password');
-    });
-
-    it('should return 401 for incorrect password', async () => {
-      const credentials: loginInfo = {
-        käyttäjäTunnus: testUser.käyttäjäTunnus,
-        salasana: 'WrongPassword',
-      };
-
-      const response = await request(app)
-        .post('/api/auth/login')
-        .send(credentials)
-        .expect(401);
-
-      expect(response.body.message).toBe('Invalid username or password');
-    });
-
-    it('should return 400 for missing credentials', async () => {
-      const response = await request(app)
-        .post('/api/auth/login')
-        .send({})
-        .expect(400);
-
-      expect(response.body.message).toContain('required');
-    });
-  });
-
-  describe('GET /api/auth/me', () => {
-    let authToken: string;
-
-    beforeEach(async () => {
-      const testUser: registeringInfo = {
-        käyttäjäTunnus: 'metest',
-        salasana: 'MeTestPassword123',
-        etunimi: 'Me',
-        sukunimi: 'Test',
-        sahkoposti: 'me@example.com',
-      };
-
-      // Register and get token
-      const response = await request(app)
-        .post('/api/auth/register')
-        .send(testUser);
-
-      authToken = response.body.token;
-    });
-
-    it('should get current user with valid token', async () => {
-      const response = await request(app)
-        .get('/api/auth/me')
-        .set('Authorization', `Bearer ${authToken}`)
-        .expect(200);
-
-      expect(response.body.käyttäjäTunnus).toBe('metest');
-      expect(response.body.etunimi).toBe('Me');
-      expect(response.body.salasana).toBeUndefined();
-    });
-
-    it('should return 401 without token', async () => {
-      const response = await request(app)
-        .get('/api/auth/me')
-        .expect(401);
-
-      expect(response.body.message).toBe('Access token required');
-    });
-
-    it('should return 403 with invalid token', async () => {
-      const response = await request(app)
-        .get('/api/auth/me')
-        .set('Authorization', 'Bearer invalidtoken')
-        .expect(403);
-
-      expect(response.body.message).toBe('Invalid token');
-    });
-  });
-
-  describe('POST /api/auth/logout', () => {
-    it('should logout successfully', async () => {
-      const response = await request(app)
-        .post('/api/auth/logout')
-        .expect(200);
-
-      expect(response.body.message).toBe('Logout successful');
-    });
+    expect(res.body.message).toBe('File uploaded successfully');
+    expect(res.body.data).toBeDefined();
+    expect(res.body.data.filename).toBeDefined();
+    expect(res.body.data.media_type).toBeDefined();
+    expect(typeof res.body.data.filesize).toBe('number');
   });
 });
-*/
+
+// ---------------------------------------------------------------------------
+// DELETE /api/upload/delete/:filename
+// ---------------------------------------------------------------------------
+describe('DELETE /api/upload/delete/:filename', () => {
+  it('returns 403 when a level-2 user tries to delete another user\'s file', async () => {
+    // user_id = 1; filename suffix after last _ = 99 → permission denied
+    const app = createApp(2, 1);
+    const res = await request(app)
+      .delete('/api/upload/delete/file-12345678_99.jpg')
+      .expect(403);
+    expect(res.body.message).toContain('permission');
+  });
+
+  it('returns 404 when the requested file does not exist on disk', async () => {
+    // admin (level 1) bypasses the per-user check
+    const app = createApp(1, 1);
+    const res = await request(app)
+      .delete('/api/upload/delete/nonexistent-file.jpg')
+      .expect(404);
+    expect(res.body.message).toBe('File not found');
+  });
+
+  it('returns 200 when an admin deletes an existing file', async () => {
+    const filename = 'admin-delete-test.jpg';
+    fs.writeFileSync(path.join(UPLOADS_DIR, filename), 'fake content');
+
+    const app = createApp(1, 1);
+    const res = await request(app)
+      .delete(`/api/upload/delete/${filename}`)
+      .expect(200);
+    expect(res.body.message).toBe('File deleted successfully');
+  });
+
+  it('returns 200 when a user deletes their own file (id suffix matches)', async () => {
+    // Controller: filename.split('_').pop()?.split('.')[0] must equal user_id.toString()
+    // 'file-12345_1.jpg' → '1'  matches  user_id = 1
+    const filename = 'file-12345_1.jpg';
+    fs.writeFileSync(path.join(UPLOADS_DIR, filename), 'fake content');
+
+    const app = createApp(2, 1);
+    const res = await request(app)
+      .delete(`/api/upload/delete/${filename}`)
+      .expect(200);
+    expect(res.body.message).toBe('File deleted successfully');
+  });
+});
+
