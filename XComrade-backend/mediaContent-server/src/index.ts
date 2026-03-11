@@ -59,10 +59,10 @@ const mediaContentServerStarter = (portToTry: number, maxAttempts: number = 10) 
   // Attach WebSocket server to the same HTTP server
   createWebSocketServer(httpServer);
 
-  httpServer.listen(portToTry, () => {
+  httpServer.listen(portToTry, '0.0.0.0', () => {
     console.log(`🚀 mediaContent-server is running on port ${portToTry}`);
-    console.log(`📍 API available at http://localhost:${portToTry}/api`);
-    console.log(`🔌 WebSocket available at ws://localhost:${portToTry}`);
+    console.log(`📍 API available at http://0.0.0.0:${portToTry}/api`);
+    console.log(`🔌 WebSocket available at ws://0.0.0.0:${portToTry}`);
   });
 
   httpServer.on('error', (err: NodeJS.ErrnoException) => {

@@ -67,9 +67,9 @@ app.use((_req: Request, res: Response) => {
 
 // Start server with automatic port fallback
 const uploadServerStarter = (portToTry: number, maxAttempts: number = 10) => {
-  const server = app.listen(portToTry, () => {
+  const server = app.listen(portToTry, '0.0.0.0', () => {
     console.log(`🚀 upload-server is running on port ${portToTry}`);
-    console.log(`📍 API available at http://localhost:${portToTry}/api`);
+    console.log(`📍 API available at http://0.0.0.0:${portToTry}/api`);
   });
 
   server.on('error', (err: NodeJS.ErrnoException) => {
