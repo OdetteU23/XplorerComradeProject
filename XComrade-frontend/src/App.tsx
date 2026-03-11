@@ -14,7 +14,7 @@ import SingleView from './views/singleView';
 
 const App = () => {
   return (
-    <BrowserRouter basename="/XplorerComrade">
+    <BrowserRouter>
       <PääKäyttäjäProvider>
         <Routes>
           {/* Public routes (with gradient overlay) */}
