@@ -3,8 +3,9 @@ services:
   - type: web
     name: xcomrade-auth
     runtime: node
+    region: frankfurt
     plan: free
-    buildCommand: cd XComrade-hybrid-types && npm install && npm run build && cd ../XComrade-backend/auth-server && npm install && npm run build
+    buildCommand: cd XComrade-hybrid-types && npm install && npm run build && cd ../XComrade-backend/auth-server && npm install --include=dev && npm run build
     startCommand: cd XComrade-backend/auth-server && node dist/index.js
     envVars:
       - key: NODE_ENV
@@ -18,8 +19,9 @@ services:
   - type: web
     name: xcomrade-mediacontent
     runtime: node
+    region: frankfurt
     plan: free
-    buildCommand: cd XComrade-hybrid-types && npm install && npm run build && cd ../XComrade-backend/mediaContent-server && npm install && npm run build
+    buildCommand: cd XComrade-hybrid-types && npm install && npm run build && cd ../XComrade-backend/mediaContent-server && npm install --include=dev && npm run build
     startCommand: cd XComrade-backend/mediaContent-server && node dist/index.js
     envVars:
       - key: NODE_ENV
@@ -33,8 +35,9 @@ services:
   - type: web
     name: xcomrade-upload
     runtime: node
+    region: frankfurt
     plan: free
-    buildCommand: cd XComrade-hybrid-types && npm install && npm run build && cd ../XComrade-backend/upload-server && npm install && npm run build
+    buildCommand: cd XComrade-hybrid-types && npm install && npm run build && cd ../XComrade-backend/upload-server && npm install --include=dev && npm run build
     startCommand: cd XComrade-backend/upload-server && node dist/index.js
     envVars:
       - key: NODE_ENV
