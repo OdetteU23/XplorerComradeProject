@@ -14,6 +14,8 @@ services:
         value: https://xplorercomradeapp.vercel.app
       - key: JWT_SECRET
         sync: false # Set the SAME secret manually in all 3 services
+      - key: DB_PATH
+        value: /tmp/xcomrade-auth.sqlite
 
   # ── MediaContent Server ──
   - type: web
@@ -30,6 +32,8 @@ services:
         value: https://xplorercomradeapp.vercel.app
       - key: JWT_SECRET
         sync: false # Must match auth-server's JWT_SECRET
+      - key: DB_PATH
+        value: /tmp/xcomrade-media.sqlite
 
   # ── Upload Server ──
   - type: web
@@ -46,3 +50,5 @@ services:
         value: https://xplorercomradeapp.vercel.app
       - key: JWT_SECRET
         sync: false # Must match auth-server's JWT_SECRET
+      - key: DB_PATH
+        value: /tmp/xcomrade-upload.sqlite
