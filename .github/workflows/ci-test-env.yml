@@ -28,11 +28,11 @@ name: CI/CD — Build, Test & Deploy to Azure
 on:
   push:
     branches:
-      - test-env  # CI only — catches errors before merging
-      - main      # CI only — re-validates merged code
+      - test-env  # CI only —-> catches errors before merging
+      - main      # CI only —-> re-validates merged code
   pull_request:
     branches: [main]
-  workflow_dispatch:  # Manual deploy — triggered from GitHub Actions tab
+  workflow_dispatch:  # Manual deploy —-> triggered from GitHub Actions tab
     inputs:
       deploy_target:
         description: 'Which servers to deploy'
@@ -47,7 +47,7 @@ on:
 
 env:
   NODE_VERSION: '20.x'
-  # Azure Web App names — must match the apps created in Azure Portal
+  # Azure Web App names —-> must match the apps created in Azure Portal
   AZURE_WEBAPP_NAME_AUTH: 'XComrade-auth'
   AZURE_WEBAPP_NAME_MEDIA: 'XComrade-mediaContent'
   AZURE_WEBAPP_NAME_UPLOAD: 'XComrade-upload'
@@ -175,7 +175,16 @@ jobs:
         if: inputs.deploy_target == 'all' || inputs.deploy_target == 'auth-server'
         run: |
           cd XComrade-backend/auth-server
+          echo "=== DEBUG: tsconfig.json ==="
+          cat tsconfig.json
+          echo "=== DEBUG: package.json types-server ==="
+          grep types-server package.json
+          echo "=== DEBUG: shared types dist ==="
+          ls ../../XComrade-hybrid-types/dist/ || echo "NO DIST!"
           npm install
+          echo "=== DEBUG: node_modules symlink ==="
+          ls -la node_modules/@xcomrade/types-server/ || echo "MISSING!"
+          ls node_modules/@xcomrade/types-server/dist/ || echo "NO TYPES DIST!"
           npm run build
 
       - name: Deploy auth-server
