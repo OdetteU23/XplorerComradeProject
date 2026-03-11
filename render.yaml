@@ -11,7 +11,7 @@ services:
       - key: NODE_ENV
         value: production
       - key: CORS_ORIGIN
-        value: https://xplorer-comrade-project-x-comrade-frontend-otijh2d2b.vercel.app
+        value: https://xplorercomradeapp.vercel.app
       - key: JWT_SECRET
         sync: false # Set the SAME secret manually in all 3 services
 
@@ -27,7 +27,7 @@ services:
       - key: NODE_ENV
         value: production
       - key: CORS_ORIGIN
-        value: https://xplorer-comrade-project-x-comrade-frontend-otijh2d2b.vercel.app
+        value: https://xplorercomradeapp.vercel.app
       - key: JWT_SECRET
         sync: false # Must match auth-server's JWT_SECRET
 
@@ -43,6 +43,6 @@ services:
       - key: NODE_ENV
         value: production
       - key: CORS_ORIGIN
-        value: https://xplorer-comrade-project-x-comrade-frontend-otijh2d2b.vercel.app
+        value: https://xplorercomradeapp.vercel.app
       - key: JWT_SECRET
         sync: false # Must match auth-server's JWT_SECRET
