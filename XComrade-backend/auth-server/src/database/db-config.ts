@@ -1,21 +1,8 @@
 import path from 'path';
-import fs from 'fs';
 
-// Shared database file — all servers use the same XComrade.sqlite
-// On Azure: set DB_PATH env var, or falls back to /home/data/ (Azure writable)
-// Locally: defaults to the backend root
-const getDbPath = (): string => {
-  if (process.env.DB_PATH) return process.env.DB_PATH;
-  // Azure App Service writable directory
-  const azureDataDir = '/home/data';
-  if (fs.existsSync('/home/site/wwwroot')) {
-    if (!fs.existsSync(azureDataDir)) fs.mkdirSync(azureDataDir, { recursive: true });
-    return path.join(azureDataDir, 'XComrade.sqlite');
-  }
-  // Local dev
-  return path.join(__dirname, '..', '..', '..', 'XComrade.sqlite');
-};
-const filename = getDbPath();
+// Database file path — configurable via DB_PATH env var
+// Defaults to XComrade.sqlite in the server root directory
+const filename = process.env.DB_PATH || path.join(__dirname, '..', '..', 'XComrade.sqlite');
 
 const tables = `
 -- Users table (käyttäjä)
