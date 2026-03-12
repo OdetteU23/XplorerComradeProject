@@ -1,0 +1,54 @@
+services:
+  # ── Auth Server ──
+  - type: web
+    name: xcomrade-auth
+    runtime: node
+    region: frankfurt
+    plan: free
+    buildCommand: cd XComrade-hybrid-types && npm install && npm run build && cd ../XComrade-backend/auth-server && npm install --include=dev && npm run build
+    startCommand: cd XComrade-backend/auth-server && node dist/index.js
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: CORS_ORIGIN
+        value: https://xplorercomradeapp.vercel.app
+      - key: JWT_SECRET
+        sync: false # Set the SAME secret manually in all 3 services
+      - key: DB_PATH
+        value: /tmp/xcomrade-auth.sqlite
+
+  # ── MediaContent Server ──
+  - type: web
+    name: xcomrade-mediacontent
+    runtime: node
+    region: frankfurt
+    plan: free
+    buildCommand: cd XComrade-hybrid-types && npm install && npm run build && cd ../XComrade-backend/mediaContent-server && npm install --include=dev && npm run build
+    startCommand: cd XComrade-backend/mediaContent-server && node dist/index.js
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: CORS_ORIGIN
+        value: https://xplorercomradeapp.vercel.app
+      - key: JWT_SECRET
+        sync: false # Must match auth-server's JWT_SECRET
+      - key: DB_PATH
+        value: /tmp/xcomrade-media.sqlite
+
+  # ── Upload Server ──
+  - type: web
+    name: xcomrade-upload
+    runtime: node
+    region: frankfurt
+    plan: free
+    buildCommand: cd XComrade-hybrid-types && npm install && npm run build && cd ../XComrade-backend/upload-server && npm install --include=dev && npm run build
+    startCommand: cd XComrade-backend/upload-server && node dist/index.js
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: CORS_ORIGIN
+        value: https://xplorercomradeapp.vercel.app
+      - key: JWT_SECRET
+        sync: false # Must match auth-server's JWT_SECRET
+      - key: DB_PATH
+        value: /tmp/xcomrade-upload.sqlite

@@ -2,7 +2,8 @@ import { Request, Response, NextFunction } from 'express';
 import jwt from 'jsonwebtoken';
 import userModel from '../api/models/userModel';
 
-const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key-change-this-in-production';
+const JWT_SECRET = process.env.JWT_SECRET || 'backend-server-secret-key-change-this-in-production';
+
 
 // Generate JWT token
 export const generateToken = (userId: number, käyttäjäTunnus: string): string => {
