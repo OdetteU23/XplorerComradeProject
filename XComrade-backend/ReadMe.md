@@ -87,7 +87,8 @@ GitHub Actions workflow (`.github/workflows/ci-test-env.yml`):
 1. **Push to `test-env`** — CI runs (install, tests) for all 3 servers + frontend build
 2. **CI passes** — merge/PR to `main`
 3. **Push to `main`** — CI re-validates merged code
-4. **Manual trigger** — deploy to Azure Function Apps (Actions tab → Run workflow)
+4. **Manual trigger** — deploying to Azure Function Apps (Actions tab → Run workflow), (Not in use at the moment)
+5. **Automatic CI** - Deploying to Render.com immidiately right after the git push. (The one in use at the moment).
 
 ---
 
@@ -101,4 +102,5 @@ GitHub Actions workflow (`.github/workflows/ci-test-env.yml`):
 - **File uploads:** Multer (disk storage) + SQLite BLOB fallback
 - **Testing:** Vitest + Jest (83 tests across 3 servers)
 - **Docs:** apiDoc
-- **CI/CD:** GitHub Actions → Azure App Service
+- **CI/CD:** GitHub Actions → Azure App Service (The original plans, but not in use at the moment as Azure was't hosting the servers correctly)
+- **CI/CD:** render.yaml --> Deploying to Render.com (The one in use at the moment as plan be)
