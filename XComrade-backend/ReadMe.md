@@ -4,7 +4,14 @@ A multi-server Express.js backend for the XplorerComrade travel companion app. B
 
 ---
 
-## Live Backend --> Azure
+## Live Backend --> Render.com (The one in use at the moment)
+| Server | URL |
+|--------|-----|
+| - **Auth API:** `https://xcomrade-auth-wabq.onrender.com/api` |
+|- **MediaContent API:** `https://xcomrade-mediacontent-wabq.onrender.com/api` |
+|- **Upload API:** `https://xcomrade-upload-wabq.onrender.com/api`|
+
+## Live Backend --> Azure (Not the one in use at the moment!)
 
 | Server | URL |
 |--------|-----|
