@@ -51,7 +51,7 @@ All three servers share a single **SQLite** database file (`XComrade.sqlite`) us
 
 ### ER Diagram
 
-![ER Diagram](ER_Diagram.png)
+![ER Diagram](palautusDM/ER_Diagram.png)
   -  FK ---> Foreign Key
 
 ### Tables Summary
