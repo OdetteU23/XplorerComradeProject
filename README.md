@@ -2,8 +2,7 @@
 
 A social travel app for finding travel companions, sharing experiences, and exploring the world with people who share the same destinations and interests.
 
-## Links
-### Video tallenne: 
+## Links 
 - **Teams tallenne:** [UI video](https://teams.cloud.microsoft/l/meetingrecap?driveId=b%21NFwLIJkyr0iKFVutsqxi3vsIvbSXGvRHtIPDeztGMyNo1nw4nS8bRpP3cSfKcQGS&driveItemId=01MS6YOZPJ3IZEJQVG5BH2XMOPQLEGR5HS&sitePath=https%3A%2F%2Fmetropoliafi.sharepoint.com%2Fsites%2FMine_00e80f%2FJaetut+asiakirjat%2FGeneral%2FRecordings%2FKokous+kanavalla+General-20260312_103437-Kokouksen+tallenne.mp4%3Fweb%3D1&fileUrl=https%3A%2F%2Fmetropoliafi.sharepoint.com%2Fsites%2FMine_00e80f%2FJaetut+asiakirjat%2FGeneral%2FRecordings%2FKokous+kanavalla+General-20260312_103437-Kokouksen+tallenne.mp4%3Fweb%3D1&threadId=19%3Ajn68XhO8QyA6xb-CIKKM3yav4Kv6VEz67_BRHFasLG01%40thread.tacv2&organizerId=c7bfa63e-e618-40f0-8350-2da03f9bf146&tenantId=4d1a61d7-b6a5-4f64-8787-f074f87013ee&callId=89370f3f-8b18-41c5-abd3-63177a86f125&threadType=space&meetingType=MeetNow&organizerGroupId=1c30cc8e-6105-48cf-8f0c-4a24ea77df00&channelType=Standard&replyChainId=1773304426335&subType=RecapSharingLink_RecapCore)
 
 - **Frontend (live app):** https://xplorercomradeapp.vercel.app
