@@ -4,7 +4,7 @@ A social travel app for finding travel companions, sharing experiences, and expl
 
 ## Links
 ### Video tallenne: 
-- **Teams tallenne:** ![UI video](https://teams.cloud.microsoft/l/meetingrecap?driveId=b%21NFwLIJkyr0iKFVutsqxi3vsIvbSXGvRHtIPDeztGMyNo1nw4nS8bRpP3cSfKcQGS&driveItemId=01MS6YOZPJ3IZEJQVG5BH2XMOPQLEGR5HS&sitePath=https%3A%2F%2Fmetropoliafi.sharepoint.com%2Fsites%2FMine_00e80f%2FJaetut+asiakirjat%2FGeneral%2FRecordings%2FKokous+kanavalla+General-20260312_103437-Kokouksen+tallenne.mp4%3Fweb%3D1&fileUrl=https%3A%2F%2Fmetropoliafi.sharepoint.com%2Fsites%2FMine_00e80f%2FJaetut+asiakirjat%2FGeneral%2FRecordings%2FKokous+kanavalla+General-20260312_103437-Kokouksen+tallenne.mp4%3Fweb%3D1&threadId=19%3Ajn68XhO8QyA6xb-CIKKM3yav4Kv6VEz67_BRHFasLG01%40thread.tacv2&organizerId=c7bfa63e-e618-40f0-8350-2da03f9bf146&tenantId=4d1a61d7-b6a5-4f64-8787-f074f87013ee&callId=89370f3f-8b18-41c5-abd3-63177a86f125&threadType=space&meetingType=MeetNow&organizerGroupId=1c30cc8e-6105-48cf-8f0c-4a24ea77df00&channelType=Standard&replyChainId=1773304426335&subType=RecapSharingLink_RecapCore)
+- **Teams tallenne:** [UI video](https://teams.cloud.microsoft/l/meetingrecap?driveId=b%21NFwLIJkyr0iKFVutsqxi3vsIvbSXGvRHtIPDeztGMyNo1nw4nS8bRpP3cSfKcQGS&driveItemId=01MS6YOZPJ3IZEJQVG5BH2XMOPQLEGR5HS&sitePath=https%3A%2F%2Fmetropoliafi.sharepoint.com%2Fsites%2FMine_00e80f%2FJaetut+asiakirjat%2FGeneral%2FRecordings%2FKokous+kanavalla+General-20260312_103437-Kokouksen+tallenne.mp4%3Fweb%3D1&fileUrl=https%3A%2F%2Fmetropoliafi.sharepoint.com%2Fsites%2FMine_00e80f%2FJaetut+asiakirjat%2FGeneral%2FRecordings%2FKokous+kanavalla+General-20260312_103437-Kokouksen+tallenne.mp4%3Fweb%3D1&threadId=19%3Ajn68XhO8QyA6xb-CIKKM3yav4Kv6VEz67_BRHFasLG01%40thread.tacv2&organizerId=c7bfa63e-e618-40f0-8350-2da03f9bf146&tenantId=4d1a61d7-b6a5-4f64-8787-f074f87013ee&callId=89370f3f-8b18-41c5-abd3-63177a86f125&threadType=space&meetingType=MeetNow&organizerGroupId=1c30cc8e-6105-48cf-8f0c-4a24ea77df00&channelType=Standard&replyChainId=1773304426335&subType=RecapSharingLink_RecapCore)
 
 - **Frontend (live app):** https://xplorercomradeapp.vercel.app
 - **GitHub repo:** https://github.com/OdetteU23/XplorerComradeProject
@@ -28,17 +28,25 @@ A social travel app for finding travel companions, sharing experiences, and expl
 
 ## Screenshots käyttöliittymästä:
 
-**Julkinen kotisivu:** ![UI screenshot](palautusDM/JulkinenKotisivu.png)
-**Rekisteröitymis- ja kirjautumisnäkymä:**  ![UI screenshot](palautusDM/Rekisteri.png) & ![UI sreenshot](palautusDM/login.png)
+**Julkinen kotisivu:** ![UI screenshot](palautusMD/JulkinenKotisivu.png)
+
+**Rekisteröitymis- ja kirjautumisnäkymä:**  ![UI screenshot](palautusMD/Rekisteri.png) 
+
+**Login:** ![UI screenshot](palautusMD/login.png)
+
 **Kotisivu kirjautunut käyttäjälle:** ![UI screenshot](palautusMD/Käyttöliittymä.png)
-**Uploadnäkymä:** ![UI screenshot](palautusDM/upload.png)
-**Estinäkymä:** ![UI screenshot](palautusDM/EtsiNäkymä.png) & ![UI screenshot](palautusDM/userEtsi.png)
-**Matkasuunnittelu näkymä:** ![UI screenshot](palautusDM/plansNäkymä.png) & ![UI screenshot](palautusDM/plans2.png)
-**Viesti näkymä:** ![UI screenshot](palautusDM/vIESTI.png)
-**Käyttäjän profiili näkymä:** ![UI screenshot](palautusDM/profileNäkymä.png)
+
+**Uploadnäkymä:** ![UI screenshot](palautusMD/upload.png)
+
+**Estinäkymä:** ![UI screenshot](palautusMD/EtsiNäkymä.png) 
+**Etsi näkymä:** ![UI screenshot](palautusMD/userEtsi.png)
+**Matkasuunnittelu näkymä:** ![UI screenshot](palautusMD/plansNäkymä.png)
+**Plans:** ![UI screenshot](palautusMD/plans2.png)
+**Viesti näkymä:** ![UI screenshot](palautusMD/vIESTI.png)
+**Käyttäjän profiili näkymä:** ![UI screenshot](palautusMD/profileNäkymä.png)
 
 ## Database Description
-**Find the database description in the backend Readme (XComrade-backend/ReadMe.md)**
+**Find the database description in the backend Readme: [XComrade-backend/ReadMe.md](XComrade-backend/ReadMe.md)**
 
 ## Implemented Features
 
@@ -78,7 +86,7 @@ A social travel app for finding travel companions, sharing experiences, and expl
 
 ## Tech Stack
 
-- **Backend:** Find the backend's Tech Stack in (XComrade-baxkend/ReadMe.md)
+- **Backend:** Find the backend's Tech Stack in [XComrade-backend/ReadMe.md](XComrade-backend/ReadMe.md)
 - **Frontend:** React + Vite + TypeScript + Tailwind CSS + Zustand + React Router
 - **Shared types:** `@xcomrade/types-server` TypeScript module (npm workspaces monorepo)
 - **Deployment:** Frontend on Vercel, 3 backend servers on Render.com (Frankfurt)
