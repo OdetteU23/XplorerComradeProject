@@ -1,7 +1,20 @@
 import { Request, Response, NextFunction } from 'express';
 import jwt from 'jsonwebtoken';
-import userModel from '../api/models/uploadModel';
-const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key-change-this-in-production';
+//import userModel from '../api/models/uploadModel';
+import db from '../database/db-manipulation';
+const JWT_SECRET = process.env.JWT_SECRET || 'backend-server-secret-key-change-this-in-production';
+
+
+// Auto-sync user from auth-server JWT into local DB if not present
+const ensureUserExists = (id: number, käyttäjäTunnus: string): void => {
+  const existing = db.prepare('SELECT id FROM käyttäjä WHERE id = ?').get(id);
+  if (!existing) {
+    db.prepare(
+      `INSERT OR IGNORE INTO käyttäjä (id, käyttäjäTunnus, salasana, etunimi, sukunimi, sahkoposti)
+       VALUES (?, ?, 'synced', ?, '', ?)`
+    ).run(id, käyttäjäTunnus, käyttäjäTunnus, `${käyttäjäTunnus}@synced.local`);
+  }
+};
 
 // Generate JWT token
 export const generateToken = (userId: number, käyttäjäTunnus: string): string => {
@@ -31,12 +44,8 @@ export const authenticateToken = (
     // Verify token
     const decoded = jwt.verify(token, JWT_SECRET) as { id: number; käyttäjäTunnus: string };
 
-    // Verify user still exists
-    const user = userModel.findById(decoded.id);
-    if (!user) {
-      res.status(401).json({ message: 'User not found' });
-      return;
-    }
+    // Auto-sync user to local DB if not present (users register on auth-server)
+    ensureUserExists(decoded.id, decoded.käyttäjäTunnus);
 
     // Attach user info to request
     req.user = {
@@ -70,6 +79,7 @@ export const optionalAuth = (
 
   try {
     const decoded = jwt.verify(token, JWT_SECRET) as { id: number; käyttäjäTunnus: string };
+    ensureUserExists(decoded.id, decoded.käyttäjäTunnus);
     req.user = {
       id: decoded.id,
       käyttäjäTunnus: decoded.käyttäjäTunnus,
